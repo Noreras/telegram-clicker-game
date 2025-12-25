@@ -276,7 +276,6 @@
             </div>
         </div>
     </div>
-
     <script>
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         const canvas = document.getElementById('game-canvas');
@@ -532,7 +531,11 @@
             }, 2500);
             
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.showAlert(text);
+                try {
+                    window.Telegram.WebApp.showAlert(text);
+                } catch (e) {
+                    // Игнорируем ошибки Telegram API
+                }
             }
         }
         
@@ -591,8 +594,7 @@
             showNotification('🆕 Новый клиент!');
             updateUI();
         }
-        
-        function updateCustomers() {
+                function updateCustomers() {
             for (let i = gameState.customers.length - 1; i >= 0; i--) {
                 const customer = gameState.customers[i];
                 
@@ -910,8 +912,7 @@
             
             updateUI();
         }
-        
-        // ==================== ОТРИСОВКА ====================
+                // ==================== ОТРИСОВКА ====================
         function drawGame() {
             // Очистка
             ctx.fillStyle = '#0f3460';
@@ -929,198 +930,257 @@
                     obj.height
                 );
                 
-                                    // Контур
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                }
+                // Контур
+                ctx.strokeStyle = obj.collision ? '#ffffff' : '#ffcc00';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(
+                    obj.x - obj.width/2, 
+                    obj.y - obj.height/2, 
+                    obj.width, 
+                    obj.height
+                );
+                
+                // Подпись
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `${Math.min(canvas.width, canvas.height) * 0.02}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(obj.label, obj.x, obj.y);
             });
-        }
-        
-        // Рисуем персонажа
-        const player = gameState.player;
-        ctx.fillStyle = player.color;
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Контур персонажа
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        // Индикатор заказа над персонажем
-        if (gameState.currentOrder) {
-            ctx.fillStyle = gameState.currentOrder === 'coffee' ? '#8B4513' : '#4CAF50';
+            
+            // Рисуем клиентов (только в баре)
+            if (gameState.location === 'bar') {
+                gameState.customers.forEach(customer => {
+                    ctx.fillStyle = customer.color;
+                    
+                    if (customer.state === 'walking' || customer.state === 'leaving') {
+                        // Треугольник
+                        ctx.beginPath();
+                        ctx.moveTo(customer.x, customer.y - customer.size/2);
+                        ctx.lineTo(customer.x - customer.size/2, customer.y + customer.size/2);
+                        ctx.lineTo(customer.x + customer.size/2, customer.y + customer.size/2);
+                        ctx.closePath();
+                        ctx.fill();
+                    } else {
+                        // Круг
+                        ctx.beginPath();
+                        ctx.arc(customer.x, customer.y, customer.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    // Индикатор заказа
+                    if (customer.state === 'waiting') {
+                        ctx.fillStyle = customer.order === 'coffee' ? '#8B4513' : '#4CAF50';
+                        ctx.beginPath();
+                        ctx.arc(customer.x, customer.y - customer.size * 1.5, customer.size * 0.6, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Контур индикатора
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                });
+            }
+            
+            // Рисуем персонажа
+            const player = gameState.player;
+            ctx.fillStyle = player.color;
             ctx.beginPath();
-            ctx.arc(player.x, player.y - player.size * 2, player.size * 0.8, 0, Math.PI * 2);
+            ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
             ctx.fill();
             
-            // Контур индикатора
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        }
-        
-        // Прогресс приготовления
-        if (gameState.isPreparing) {
-            const progress = gameState.preparationProgress / gameState.preparationTotal;
-            const barWidth = canvas.width * 0.6;
-            const barHeight = 20;
-            const barX = (canvas.width - barWidth) / 2;
-            const barY = canvas.height * 0.1;
-            
-            // Фон прогресс-бара
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(barX, barY, barWidth, barHeight);
-            
-            // Заполнение прогресс-бара
-            ctx.fillStyle = '#00adb5';
-            ctx.fillRect(barX, barY, barWidth * progress, barHeight);
-            
-            // Контур прогресс-бара
+            // Контур персонажа
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;
-            ctx.strokeRect(barX, barY, barWidth, barHeight);
-            
-            // Текст прогресс-бара
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '16px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const drinkName = gameState.currentOrder === 'coffee' ? 'кофе' : 'чая';
-            ctx.fillText(
-                `Приготовление ${drinkName}... ${Math.round(progress * 100)}%`,
-                canvas.width / 2,
-                barY + barHeight / 2
-            );
-        }
-        
-        // Рисуем информацию об инвентаре (только на складе)
-        if (gameState.location === 'storage') {
-            const startX = 20;
-            const startY = canvas.height * 0.15;
-            const lineHeight = 20;
-            
-            // Фон для текста
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(startX - 10, startY - 10, 200, 100);
-            
-            // Заголовок
-            ctx.fillStyle = '#00adb5';
-            ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText('📦 ЗАПАСЫ:', startX, startY);
-            
-            // Список ингредиентов
-            ctx.font = '14px Arial';
-            let y = startY + lineHeight;
-            
-            ['coffee', 'tea', 'milk', 'syrup'].forEach((ingredient, index) => {
-                const current = gameState.inventory[ingredient];
-                const max = gameState.storageCapacity[ingredient];
-                const percent = (current / max) * 100;
-                
-                // Цвет в зависимости от заполненности
-                if (percent < 30) ctx.fillStyle = '#e74c3c';
-                else if (percent < 70) ctx.fillStyle = '#f39c12';
-                else ctx.fillStyle = '#2ecc71';
-                
-                const ingredientName = {
-                    'coffee': 'Кофе',
-                    'tea': 'Чай', 
-                    'milk': 'Молоко',
-                    'syrup': 'Сироп'
-                }[ingredient];
-                
-                ctx.fillText(`${ingredientName}: ${current}/${max}`, startX, y + lineHeight * index);
-            });
-        }
-        
-        // Рисуем цель движения (если есть)
-        if (gameState.player.targetX && gameState.player.targetY) {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.beginPath();
-            ctx.arc(gameState.player.targetX, gameState.player.targetY, 8, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.strokeStyle = '#00ff9d';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(gameState.player.targetX, gameState.player.targetY, 12, 0, Math.PI * 2);
             ctx.stroke();
-        }
-        
-        // Рисуем линию от персонажа к цели (если есть)
-        if (gameState.player.targetX && gameState.player.targetY && gameState.player.isMoving) {
-            ctx.strokeStyle = 'rgba(0, 173, 181, 0.5)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            ctx.moveTo(gameState.player.x, gameState.player.y);
-            ctx.lineTo(gameState.player.targetX, gameState.player.targetY);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-    }
-    
-    // ==================== ИНИЦИАЛИЗАЦИЯ И ЗАПУСК ====================
-    function init() {
-        resizeCanvas();
-        
-        // Настройка Telegram Web App
-        if (window.Telegram && window.Telegram.WebApp) {
-            try {
-                Telegram.WebApp.ready();
-                Telegram.WebApp.expand();
-                Telegram.WebApp.setHeaderColor('#1a1a2e');
-                Telegram.WebApp.setBackgroundColor('#1a1a2e');
+            
+            // Индикатор заказа над персонажем
+            if (gameState.currentOrder) {
+                ctx.fillStyle = gameState.currentOrder === 'coffee' ? '#8B4513' : '#4CAF50';
+                ctx.beginPath();
+                ctx.arc(player.x, player.y - player.size * 2, player.size * 0.8, 0, Math.PI * 2);
+                ctx.fill();
                 
-                showNotification('Игра загружена! Начните обслуживать клиентов.');
-            } catch (e) {
-                console.log('Telegram Web App не доступен:', e);
+                // Контур индикатора
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+            
+            // Прогресс приготовления
+            if (gameState.isPreparing) {
+                const progress = gameState.preparationProgress / gameState.preparationTotal;
+                const barWidth = canvas.width * 0.6;
+                const barHeight = 20;
+                const barX = (canvas.width - barWidth) / 2;
+                const barY = canvas.height * 0.1;
+                
+                // Фон прогресс-бара
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                
+                // Заполнение прогресс-бара
+                ctx.fillStyle = '#00adb5';
+                ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+                
+                // Контур прогресс-бара
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(barX, barY, barWidth, barHeight);
+                
+                // Текст прогресс-бара
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const drinkName = gameState.currentOrder === 'coffee' ? 'кофе' : 'чая';
+                ctx.fillText(
+                    `Приготовление ${drinkName}... ${Math.round(progress * 100)}%`,
+                    canvas.width / 2,
+                    barY + barHeight / 2
+                );
+            }
+            
+            // Рисуем информацию об инвентаре (только на складе)
+            if (gameState.location === 'storage') {
+                const startX = 20;
+                const startY = canvas.height * 0.15;
+                const lineHeight = 20;
+                
+                // Фон для текста
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(startX - 10, startY - 10, 200, 100);
+                
+                // Заголовок
+                ctx.fillStyle = '#00adb5';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('📦 ЗАПАСЫ:', startX, startY);
+                
+                // Список ингредиентов
+                ctx.font = '14px Arial';
+                let y = startY + lineHeight;
+                
+                ['coffee', 'tea', 'milk', 'syrup'].forEach((ingredient, index) => {
+                    const current = gameState.inventory[ingredient];
+                    const max = gameState.storageCapacity[ingredient];
+                    const percent = (current / max) * 100;
+                    
+                    // Цвет в зависимости от заполненности
+                    if (percent < 30) ctx.fillStyle = '#e74c3c';
+                    else if (percent < 70) ctx.fillStyle = '#f39c12';
+                    else ctx.fillStyle = '#2ecc71';
+                    
+                    const ingredientName = {
+                        'coffee': 'Кофе',
+                        'tea': 'Чай', 
+                        'milk': 'Молоко',
+                        'syrup': 'Сироп'
+                    }[ingredient];
+                    
+                    ctx.fillText(`${ingredientName}: ${current}/${max}`, startX, y + lineHeight * index);
+                });
+            }
+            
+            // Рисуем цель движения (если есть)
+            if (gameState.player.targetX && gameState.player.targetY) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(gameState.player.targetX, gameState.player.targetY, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#00ff9d';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(gameState.player.targetX, gameState.player.targetY, 12, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Рисуем линию от персонажа к цели (если есть)
+            if (gameState.player.targetX && gameState.player.targetY && gameState.player.isMoving) {
+                ctx.strokeStyle = 'rgba(0, 173, 181, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(gameState.player.x, gameState.player.y);
+                ctx.lineTo(gameState.player.targetX, gameState.player.targetY);
+                ctx.stroke();
+                ctx.setLineDash([]);
             }
         }
         
-        // Первый клиент через 5 секунд
-        setTimeout(() => {
-            if (gameState.dayActive) {
-                gameState.nextCustomerTime = Date.now() + 5000;
-            }
-        }, 5000);
-        
-        // Игровой цикл
-        function gameLoop() {
-            updateGame();
-            drawGame();
-            requestAnimationFrame(gameLoop);
-        }
-        
-        gameLoop();
-        
-        // Обновление при изменении размера окна
-        window.addEventListener('resize', () => {
+        // ==================== ИНИЦИАЛИЗАЦИЯ И ЗАПУСК ====================
+        function init() {
             resizeCanvas();
-            drawGame();
-        });
+            
+            // Настройка Telegram Web App
+            if (window.Telegram && window.Telegram.WebApp) {
+                try {
+                    Telegram.WebApp.ready();
+                    Telegram.WebApp.expand();
+                    Telegram.WebApp.setHeaderColor('#1a1a2e');
+                    Telegram.WebApp.setBackgroundColor('#1a1a2e');
+                    
+                    showNotification('Игра загружена! Начните обслуживать клиентов.');
+                } catch (e) {
+                    console.log('Telegram Web App не доступен, игра работает в браузере');
+                }
+            }
+            
+            // Первый клиент через 5 секунд
+            setTimeout(() => {
+                if (gameState.dayActive) {
+                    gameState.nextCustomerTime = Date.now() + 5000;
+                }
+            }, 5000);
+            
+            // Игровой цикл
+            function gameLoop() {
+                updateGame();
+                drawGame();
+                requestAnimationFrame(gameLoop);
+            }
+            
+            gameLoop();
+            
+            // Обновление при изменении размера окна
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                drawGame();
+            });
+            
+            // Отключаем контекстное меню на телефонах
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                return false;
+            });
+            
+            // Запрещаем масштабирование на мобильных
+            document.addEventListener('gesturestart', (e) => {
+                e.preventDefault();
+            });
+        }
         
-        // Отключаем контекстное меню на телефонах
-        canvas.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            return false;
-        });
-    }
-    
-    // Запуск при загрузке страницы
-    window.addEventListener('load', init);
-    
-    // Экспорт функций для кнопок HTML
-    window.startNewDay = startNewDay;
-    
-    // Для отладки в консоли
-    window.gameState = gameState;
-    console.log('Игра инициализирована. Команды:');
-    console.log('- gameState - посмотреть состояние игры');
-    console.log('- startNewDay() - начать новый день');
-    console.log('- showNotification("текст") - показать уведомление');
-</script>
+        // Запуск при загрузке страницы
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        // Экспорт функций для кнопок HTML
+        window.startNewDay = startNewDay;
+        
+        // Для отладки в консоли
+        window.gameState = gameState;
+        window.showNotification = showNotification;
+        
+        console.log('🎮 Кофейный симулятор инициализирован!');
+        console.log('Доступные команды для отладки:');
+        console.log('- gameState - посмотреть состояние игры');
+        console.log('- startNewDay() - начать новый день');
+        console.log('- showNotification("текст") - показать уведомление');
+    </script>
+</body>
+</html>
