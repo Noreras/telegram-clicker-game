@@ -192,7 +192,7 @@
         </div>
         
         <div style="margin-top: 20px; font-size: 12px; opacity: 0.7;">
-            Прогресс сохраняется автоматически
+            Начинайте играть!
         </div>
     </div>
 
@@ -286,9 +286,6 @@
                 
                 // Уведомление
                 showNotification(`Куплено: ${upgrade.name} (ур. ${upgrade.level})`);
-                
-                // Сохраняем игру
-                saveGame();
             }
         }
         
@@ -362,54 +359,6 @@
             }, 2000);
         }
         
-        // ==================== СИСТЕМА СОХРАНЕНИЯ ====================
-        
-        function saveGame() {
-            const gameData = {
-                coins,
-                clicks,
-                perClick,
-                perSecond,
-                totalUpgrades,
-                upgrades
-            };
-            localStorage.setItem('clickerGame', JSON.stringify(gameData));
-        }
-        
-        function loadGame() {
-            const saved = localStorage.getItem('clickerGame');
-            if (saved) {
-                try {
-                    const data = JSON.parse(saved);
-                    
-                    // Загружаем основные данные
-                    coins = data.coins || 0;
-                    clicks = data.clicks || 0;
-                    perClick = data.perClick || 1;
-                    perSecond = data.perSecond || 0;
-                    totalUpgrades = data.totalUpgrades || 0;
-                    
-                    // Загружаем улучшения (сохраняем структуру если её нет)
-                    if (data.upgrades) {
-                        for (const type in upgrades) {
-                            if (data.upgrades[type]) {
-                                upgrades[type].level = data.upgrades[type].level || 0;
-                                upgrades[type].cost = data.upgrades[type].cost || upgrades[type].baseCost;
-                            }
-                        }
-                    }
-                    
-                    updateDisplay();
-                    updateButtons();
-                    showNotification('Игра загружена!');
-                    
-                } catch (e) {
-                    console.error('Ошибка загрузки:', e);
-                    showNotification('Новый игрок!');
-                }
-            }
-        }
-        
         // ==================== АВТОМАТИЧЕСКИЕ ПРОЦЕССЫ ====================
         
         // Автокликер
@@ -421,24 +370,23 @@
             }
         }, 1000);
         
-        // Автосохранение
-        setInterval(saveGame, 30000); // Каждые 30 секунд
-        
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         
         // Назначаем обработчик клика
         coinEl.addEventListener('click', tapCoin);
         
-        // Загружаем игру при старте
+        // Запускаем игру при старте
         window.addEventListener('load', () => {
-            loadGame();
+            // Инициализируем отображение
+            updateDisplay();
+            updateButtons();
             
             // Запускаем проверку кнопок каждую секунду
             setInterval(updateButtons, 1000);
+            
+            // Приветственное сообщение
+            showNotification('Добро пожаловать в игру! Начинайте кликать!');
         });
-        
-        // Сохраняем при закрытии
-        window.addEventListener('beforeunload', saveGame);
         
     </script>
 </body>
