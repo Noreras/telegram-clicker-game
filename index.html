@@ -481,12 +481,15 @@
             gameState.player.interactionTarget = null;
         }
         
-        // ==================== КОЛЛИЗИИ ====================
+               // ==================== КОЛЛИЗИИ ====================
         function checkCollision(x, y, object) {
-            const left = object.x - object.width / 2;
-            const right = object.x + object.width / 2;
-            const top = object.y - object.height / 2;
-            const bottom = object.y + object.height / 2;
+            // Увеличиваем зону клика для дверей
+            const clickMargin = object.type === 'door' ? 30 : 0;
+            
+            const left = object.x - object.width / 2 - clickMargin;
+            const right = object.x + object.width / 2 + clickMargin;
+            const top = object.y - object.height / 2 - clickMargin;
+            const bottom = object.y + object.height / 2 + clickMargin;
             
             return x >= left && x <= right && y >= top && y <= bottom;
         }
@@ -630,7 +633,8 @@
                 }
                 else if (customer.state === 'waiting') {
                     customer.patienceTimer++;
-                    if (customer.patienceTimer > 300) {
+                    // Увеличиваем время ожидания с 5 до 60 секундов (300 → 3600 кадров при 60 FPS)
+                    if (customer.patienceTimer > 3600) {
                         customer.state = 'leaving';
                         customer.color = '#FFFFFF';
                         showNotification('😠 Клиент ушел недовольный');
@@ -715,18 +719,25 @@
             }
         }
         
-        // ==================== УПРАВЛЕНИЕ ====================
+             // ==================== УПРАВЛЕНИЕ ====================
         canvas.addEventListener('click', (e) => {
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             
-            // Проверяем, кликнули ли на объект
+            // Проверяем, кликнули ли на объект (с увеличенной зоной)
             const objects = gameState.objects[gameState.location];
             let clickedObject = null;
             
             for (const obj of objects) {
-                if (checkCollision(x, y, obj)) {
+                // Для дверей увеличиваем зону клика, для остальных - стандартную
+                const margin = obj.type === 'door' ? 30 : 10;
+                const left = obj.x - obj.width / 2 - margin;
+                const right = obj.x + obj.width / 2 + margin;
+                const top = obj.y - obj.height / 2 - margin;
+                const bottom = obj.y + obj.height / 2 + margin;
+                
+                if (x >= left && x <= right && y >= top && y <= bottom) {
                     clickedObject = obj;
                     break;
                 }
@@ -734,7 +745,7 @@
             
             if (clickedObject) {
                 // Двигаемся к объекту, но на безопасное расстояние
-                const safeDistance = clickedObject.type === 'door' ? 0 : gameState.player.size * 2;
+                const safeDistance = clickedObject.type === 'door' ? 10 : gameState.player.size * 1.5;
                 const angle = Math.atan2(clickedObject.y - gameState.player.y, clickedObject.x - gameState.player.x);
                 const targetX = clickedObject.x - Math.cos(angle) * safeDistance;
                 const targetY = clickedObject.y - Math.sin(angle) * safeDistance;
@@ -743,8 +754,20 @@
                     gameState.player.targetX = targetX;
                     gameState.player.targetY = targetY;
                     gameState.player.interactionTarget = clickedObject;
+                    showNotification(`Иду к ${clickedObject.label.toLowerCase()}...`);
                 } else {
-                    showNotification('Не могу подойти к объекту!');
+                    // Пробуем подойти с другой стороны
+                    const alternativeX = clickedObject.x + Math.cos(angle) * safeDistance;
+                    const alternativeY = clickedObject.y + Math.sin(angle) * safeDistance;
+                    
+                    if (isValidPosition(alternativeX, alternativeY)) {
+                        gameState.player.targetX = alternativeX;
+                        gameState.player.targetY = alternativeY;
+                        gameState.player.interactionTarget = clickedObject;
+                        showNotification(`Иду к ${clickedObject.label.toLowerCase()}...`);
+                    } else {
+                        showNotification('Не могу подойти к объекту!');
+                    }
                 }
             } else {
                 // Просто двигаемся к точке, если она доступна
@@ -979,6 +1002,22 @@
                         ctx.strokeStyle = '#ffffff';
                         ctx.lineWidth = 1;
                         ctx.stroke();
+                        
+                        // Индикатор терпения (полоска над клиентом)
+                        const patiencePercent = 1 - (customer.patienceTimer / 3600);
+                        const barWidth = customer.size * 2;
+                        const barHeight = 4;
+                        const barX = customer.x - barWidth / 2;
+                        const barY = customer.y - customer.size * 2.5;
+                        
+                        // Фон полоски
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                        ctx.fillRect(barX, barY, barWidth, barHeight);
+                        
+                        // Заполнение полоски (меняется от зеленого к красному)
+                        const hue = patiencePercent * 120; // 120 = зеленый, 0 = красный
+                        ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                        ctx.fillRect(barX, barY, barWidth * patiencePercent, barHeight);
                     }
                 });
             }
@@ -1184,3 +1223,4 @@
     </script>
 </body>
 </html>
+
