@@ -110,12 +110,20 @@
             transform: none;
         }
         
+        .upgrade-btn.can-buy {
+            background: rgba(0, 255, 0, 0.2);
+            border-color: rgba(0, 255, 0, 0.4);
+        }
+        
         .stats {
             margin-top: 20px;
             font-size: 14px;
             opacity: 0.8;
             display: flex;
             justify-content: space-around;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 10px;
         }
         
         @keyframes coinAnimation {
@@ -126,6 +134,23 @@
         
         .coin-animation {
             animation: coinAnimation 0.3s ease;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 255, 0, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
     </style>
 </head>
@@ -144,64 +169,164 @@
         <p>Нажатий: <span id="clicks">0</span></p>
         
         <div class="upgrades">
-            <button class="upgrade-btn" onclick="buyUpgrade('clicker', 10)">
+            <button class="upgrade-btn" id="upgrade-clicker" onclick="buyUpgrade('clicker')">
                 <span>🔼 Усилитель клика</span>
-                <span>+1 за клик (10 🪙)</span>
+                <span id="clicker-cost">10 🪙</span>
             </button>
             
-            <button class="upgrade-btn" onclick="buyUpgrade('auto', 50)">
+            <button class="upgrade-btn" id="upgrade-auto" onclick="buyUpgrade('auto')">
                 <span>⚙️ Автокликер</span>
-                <span>+1/сек (50 🪙)</span>
+                <span id="auto-cost">50 🪙</span>
             </button>
             
-            <button class="upgrade-btn" onclick="buyUpgrade('mega', 200)">
+            <button class="upgrade-btn" id="upgrade-mega" onclick="buyUpgrade('mega')">
                 <span>🚀 Мега-кликер</span>
-                <span>+10 за клик (200 🪙)</span>
+                <span id="mega-cost">200 🪙</span>
             </button>
         </div>
         
         <div class="stats">
             <div>За клик: <span id="perClick">1</span></div>
             <div>В секунду: <span id="perSecond">0</span></div>
+            <div>Улучшений: <span id="totalUpgrades">0</span></div>
+        </div>
+        
+        <div style="margin-top: 20px; font-size: 12px; opacity: 0.7;">
+            Прогресс сохраняется автоматически
         </div>
     </div>
 
     <script>
-        // Игровые переменные
+        // ==================== ИГРОВЫЕ ПЕРЕМЕННЫЕ ====================
         let coins = 0;
         let clicks = 0;
         let perClick = 1;
         let perSecond = 0;
+        let totalUpgrades = 0;
         
-        // Улучшения
-        let upgrades = {
-            clicker: { level: 0, cost: 10, effect: 1 },
-            auto: { level: 0, cost: 50, effect: 1 },
-            mega: { level: 0, cost: 200, effect: 10 }
+        // ==================== СИСТЕМА УЛУЧШЕНИЙ ====================
+        const upgrades = {
+            clicker: {
+                level: 0,
+                baseCost: 10,
+                cost: 10,
+                effect: 1,
+                name: "Усилитель клика",
+                description: "+1 за клик"
+            },
+            auto: {
+                level: 0,
+                baseCost: 50,
+                cost: 50,
+                effect: 1,
+                name: "Автокликер",
+                description: "+1/сек"
+            },
+            mega: {
+                level: 0,
+                baseCost: 200,
+                cost: 200,
+                effect: 10,
+                name: "Мега-кликер",
+                description: "+10 за клик"
+            }
         };
         
-        // Элементы DOM
+        // ==================== ЭЛЕМЕНТЫ DOM ====================
         const coinEl = document.getElementById('coin');
         const coinsEl = document.getElementById('coins');
         const clicksEl = document.getElementById('clicks');
         const perClickEl = document.getElementById('perClick');
         const perSecondEl = document.getElementById('perSecond');
+        const totalUpgradesEl = document.getElementById('totalUpgrades');
+        
+        // ==================== ФУНКЦИИ ИГРЫ ====================
         
         // Клик по монете
-        coinEl.addEventListener('click', () => {
+        function tapCoin() {
             coins += perClick;
             clicks++;
             updateDisplay();
+            updateButtons();
             
             // Анимация
             coinEl.classList.add('coin-animation');
-            setTimeout(() => {
-                coinEl.classList.remove('coin-animation');
-            }, 300);
+            setTimeout(() => coinEl.classList.remove('coin-animation'), 300);
             
             // Создаем летящую монетку
             createFlyingCoin();
-        });
+        }
+        
+        // Покупка улучшения
+        function buyUpgrade(type) {
+            const upgrade = upgrades[type];
+            
+            if (coins >= upgrade.cost) {
+                // Списываем деньги
+                coins -= upgrade.cost;
+                
+                // Применяем эффект
+                if (type === 'clicker' || type === 'mega') {
+                    perClick += upgrade.effect;
+                }
+                if (type === 'auto') {
+                    perSecond += upgrade.effect;
+                }
+                
+                // Увеличиваем уровень
+                upgrade.level++;
+                totalUpgrades++;
+                
+                // Пересчитываем стоимость для следующего уровня
+                upgrade.cost = Math.floor(upgrade.baseCost * Math.pow(1.5, upgrade.level));
+                
+                // Обновляем отображение
+                updateDisplay();
+                updateButtons();
+                
+                // Уведомление
+                showNotification(`Куплено: ${upgrade.name} (ур. ${upgrade.level})`);
+                
+                // Сохраняем игру
+                saveGame();
+            }
+        }
+        
+        // Обновление отображения
+        function updateDisplay() {
+            coinsEl.textContent = coins;
+            clicksEl.textContent = clicks;
+            perClickEl.textContent = perClick;
+            perSecondEl.textContent = perSecond;
+            totalUpgradesEl.textContent = totalUpgrades;
+        }
+        
+        // Обновление кнопок улучшений
+        function updateButtons() {
+            for (const [type, upgrade] of Object.entries(upgrades)) {
+                const button = document.getElementById(`upgrade-${type}`);
+                const costElement = document.getElementById(`${type}-cost`);
+                
+                if (button && costElement) {
+                    // Обновляем цену
+                    costElement.textContent = `${upgrade.cost} 🪙`;
+                    
+                    // Обновляем описание
+                    button.querySelector('span:first-child').innerHTML = 
+                        `${type === 'clicker' ? '🔼' : type === 'auto' ? '⚙️' : '🚀'} ${upgrade.name}<br>
+                        <small>${upgrade.description} (ур. ${upgrade.level})</small>`;
+                    
+                    // Включаем/выключаем кнопку
+                    if (coins >= upgrade.cost) {
+                        button.disabled = false;
+                        button.classList.add('can-buy');
+                    } else {
+                        button.disabled = true;
+                        button.classList.remove('can-buy');
+                    }
+                }
+            }
+        }
         
         // Создание летящей монетки
         function createFlyingCoin() {
@@ -221,67 +346,73 @@
                 flyingCoin.style.opacity = '0';
             }, 10);
             
-            setTimeout(() => {
-                document.body.removeChild(flyingCoin);
-            }, 600);
+            setTimeout(() => document.body.removeChild(flyingCoin), 600);
         }
         
-        // Покупка улучшения
-        function buyUpgrade(type, baseCost) {
-            const upgrade = upgrades[type];
-            const cost = baseCost * (upgrade.level + 1);
+        // Показать уведомление
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
             
-            if (coins >= cost) {
-                coins -= cost;
-                upgrade.level++;
-                
-                if (type === 'clicker' || type === 'mega') {
-                    perClick += upgrade.effect;
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 2000);
+        }
+        
+        // ==================== СИСТЕМА СОХРАНЕНИЯ ====================
+        
+        function saveGame() {
+            const gameData = {
+                coins,
+                clicks,
+                perClick,
+                perSecond,
+                totalUpgrades,
+                upgrades
+            };
+            localStorage.setItem('clickerGame', JSON.stringify(gameData));
+        }
+        
+        function loadGame() {
+            const saved = localStorage.getItem('clickerGame');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    
+                    // Загружаем основные данные
+                    coins = data.coins || 0;
+                    clicks = data.clicks || 0;
+                    perClick = data.perClick || 1;
+                    perSecond = data.perSecond || 0;
+                    totalUpgrades = data.totalUpgrades || 0;
+                    
+                    // Загружаем улучшения (сохраняем структуру если её нет)
+                    if (data.upgrades) {
+                        for (const type in upgrades) {
+                            if (data.upgrades[type]) {
+                                upgrades[type].level = data.upgrades[type].level || 0;
+                                upgrades[type].cost = data.upgrades[type].cost || upgrades[type].baseCost;
+                            }
+                        }
+                    }
+                    
+                    updateDisplay();
+                    updateButtons();
+                    showNotification('Игра загружена!');
+                    
+                } catch (e) {
+                    console.error('Ошибка загрузки:', e);
+                    showNotification('Новый игрок!');
                 }
-                if (type === 'auto') {
-                    perSecond += upgrade.effect;
-                }
-                
-                updateDisplay();
-                updateButtons();
-                
-                // Визуальная обратная связь
-                const button = event.target.closest('.upgrade-btn');
-                button.style.background = 'rgba(0, 255, 0, 0.3)';
-                setTimeout(() => {
-                    button.style.background = '';
-                }, 300);
             }
         }
         
-        // Обновление кнопок улучшений
-        function updateButtons() {
-            document.querySelectorAll('.upgrade-btn').forEach(btn => {
-                const text = btn.querySelector('span:last-child').textContent;
-                const match = text.match(/\((\d+)/);
-                if (match) {
-                    const baseCost = parseInt(match[1]);
-                    const type = btn.onclick.toString().match(/buyUpgrade\('(\w+)'/)[1];
-                    const level = upgrades[type].level;
-                    const newCost = baseCost * (level + 1);
-                    
-                    btn.querySelector('span:last-child').textContent = 
-                        text.replace(/\d+ 🪙/, `${newCost} 🪙`);
-                    
-                    btn.disabled = coins < newCost;
-                }
-            });
-        }
+        // ==================== АВТОМАТИЧЕСКИЕ ПРОЦЕССЫ ====================
         
-        // Обновление отображения
-        function updateDisplay() {
-            coinsEl.textContent = coins;
-            clicksEl.textContent = clicks;
-            perClickEl.textContent = perClick;
-            perSecondEl.textContent = perSecond;
-        }
-        
-        // Автоматический доход
+        // Автокликер
         setInterval(() => {
             if (perSecond > 0) {
                 coins += perSecond;
@@ -290,38 +421,25 @@
             }
         }, 1000);
         
-        // Сохранение в LocalStorage
-        function saveGame() {
-            const gameData = {
-                coins,
-                clicks,
-                perClick,
-                perSecond,
-                upgrades
-            };
-            localStorage.setItem('clickerGame', JSON.stringify(gameData));
-        }
+        // Автосохранение
+        setInterval(saveGame, 30000); // Каждые 30 секунд
         
-        // Загрузка из LocalStorage
-        function loadGame() {
-            const saved = localStorage.getItem('clickerGame');
-            if (saved) {
-                const data = JSON.parse(saved);
-                coins = data.coins || 0;
-                clicks = data.clicks || 0;
-                perClick = data.perClick || 1;
-                perSecond = data.perSecond || 0;
-                upgrades = data.upgrades || upgrades;
-                updateDisplay();
-                updateButtons();
-            }
-        }
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         
-        // Автосохранение каждые 10 секунд
-        setInterval(saveGame, 10000);
+        // Назначаем обработчик клика
+        coinEl.addEventListener('click', tapCoin);
         
-        // Загрузка при старте
-        window.addEventListener('load', loadGame);
+        // Загружаем игру при старте
+        window.addEventListener('load', () => {
+            loadGame();
+            
+            // Запускаем проверку кнопок каждую секунду
+            setInterval(updateButtons, 1000);
+        });
+        
+        // Сохраняем при закрытии
+        window.addEventListener('beforeunload', saveGame);
+        
     </script>
 </body>
 </html>
