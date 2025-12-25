@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кликер игра</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .balance {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 20px 0;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .coin {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border-radius: 50%;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            cursor: pointer;
+            user-select: none;
+            border: 8px solid #FFC107;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            transition: all 0.1s;
+        }
+        
+        .coin:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+        }
+        
+        .upgrades {
+            display: grid;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .upgrade-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .upgrade-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .upgrade-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stats {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.8;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        @keyframes coinAnimation {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .coin-animation {
+            animation: coinAnimation 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🪙 Кликер-игра</h1>
+        <p>Жми на монету, чтобы зарабатывать!</p>
+        
+        <div class="balance">
+            <span id="coins">0</span> 🪙
+        </div>
+        
+        <div class="coin" id="coin">
+            💰
+        </div>
+        <p>Нажатий: <span id="clicks">0</span></p>
+        
+        <div class="upgrades">
+            <button class="upgrade-btn" onclick="buyUpgrade('clicker', 10)">
+                <span>🔼 Усилитель клика</span>
+                <span>+1 за клик (10 🪙)</span>
+            </button>
+            
+            <button class="upgrade-btn" onclick="buyUpgrade('auto', 50)">
+                <span>⚙️ Автокликер</span>
+                <span>+1/сек (50 🪙)</span>
+            </button>
+            
+            <button class="upgrade-btn" onclick="buyUpgrade('mega', 200)">
+                <span>🚀 Мега-кликер</span>
+                <span>+10 за клик (200 🪙)</span>
+            </button>
+        </div>
+        
+        <div class="stats">
+            <div>За клик: <span id="perClick">1</span></div>
+            <div>В секунду: <span id="perSecond">0</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Игровые переменные
+        let coins = 0;
+        let clicks = 0;
+        let perClick = 1;
+        let perSecond = 0;
+        
+        // Улучшения
+        let upgrades = {
+            clicker: { level: 0, cost: 10, effect: 1 },
+            auto: { level: 0, cost: 50, effect: 1 },
+            mega: { level: 0, cost: 200, effect: 10 }
+        };
+        
+        // Элементы DOM
+        const coinEl = document.getElementById('coin');
+        const coinsEl = document.getElementById('coins');
+        const clicksEl = document.getElementById('clicks');
+        const perClickEl = document.getElementById('perClick');
+        const perSecondEl = document.getElementById('perSecond');
+        
+        // Клик по монете
+        coinEl.addEventListener('click', () => {
+            coins += perClick;
+            clicks++;
+            updateDisplay();
+            
+            // Анимация
+            coinEl.classList.add('coin-animation');
+            setTimeout(() => {
+                coinEl.classList.remove('coin-animation');
+            }, 300);
+            
+            // Создаем летящую монетку
+            createFlyingCoin();
+        });
+        
+        // Создание летящей монетки
+        function createFlyingCoin() {
+            const flyingCoin = document.createElement('div');
+            flyingCoin.innerHTML = '🪙';
+            flyingCoin.style.position = 'fixed';
+            flyingCoin.style.fontSize = '20px';
+            flyingCoin.style.left = `${coinEl.offsetLeft + 50}px`;
+            flyingCoin.style.top = `${coinEl.offsetTop + 50}px`;
+            flyingCoin.style.opacity = '1';
+            flyingCoin.style.transition = 'all 0.5s';
+            flyingCoin.style.zIndex = '1000';
+            document.body.appendChild(flyingCoin);
+            
+            setTimeout(() => {
+                flyingCoin.style.top = `${coinEl.offsetTop - 50}px`;
+                flyingCoin.style.opacity = '0';
+            }, 10);
+            
+            setTimeout(() => {
+                document.body.removeChild(flyingCoin);
+            }, 600);
+        }
+        
+        // Покупка улучшения
+        function buyUpgrade(type, baseCost) {
+            const upgrade = upgrades[type];
+            const cost = baseCost * (upgrade.level + 1);
+            
+            if (coins >= cost) {
+                coins -= cost;
+                upgrade.level++;
+                
+                if (type === 'clicker' || type === 'mega') {
+                    perClick += upgrade.effect;
+                }
+                if (type === 'auto') {
+                    perSecond += upgrade.effect;
+                }
+                
+                updateDisplay();
+                updateButtons();
+                
+                // Визуальная обратная связь
+                const button = event.target.closest('.upgrade-btn');
+                button.style.background = 'rgba(0, 255, 0, 0.3)';
+                setTimeout(() => {
+                    button.style.background = '';
+                }, 300);
+            }
+        }
+        
+        // Обновление кнопок улучшений
+        function updateButtons() {
+            document.querySelectorAll('.upgrade-btn').forEach(btn => {
+                const text = btn.querySelector('span:last-child').textContent;
+                const match = text.match(/\((\d+)/);
+                if (match) {
+                    const baseCost = parseInt(match[1]);
+                    const type = btn.onclick.toString().match(/buyUpgrade\('(\w+)'/)[1];
+                    const level = upgrades[type].level;
+                    const newCost = baseCost * (level + 1);
+                    
+                    btn.querySelector('span:last-child').textContent = 
+                        text.replace(/\d+ 🪙/, `${newCost} 🪙`);
+                    
+                    btn.disabled = coins < newCost;
+                }
+            });
+        }
+        
+        // Обновление отображения
+        function updateDisplay() {
+            coinsEl.textContent = coins;
+            clicksEl.textContent = clicks;
+            perClickEl.textContent = perClick;
+            perSecondEl.textContent = perSecond;
+        }
+        
+        // Автоматический доход
+        setInterval(() => {
+            if (perSecond > 0) {
+                coins += perSecond;
+                updateDisplay();
+                updateButtons();
+            }
+        }, 1000);
+        
+        // Сохранение в LocalStorage
+        function saveGame() {
+            const gameData = {
+                coins,
+                clicks,
+                perClick,
+                perSecond,
+                upgrades
+            };
+            localStorage.setItem('clickerGame', JSON.stringify(gameData));
+        }
+        
+        // Загрузка из LocalStorage
+        function loadGame() {
+            const saved = localStorage.getItem('clickerGame');
+            if (saved) {
+                const data = JSON.parse(saved);
+                coins = data.coins || 0;
+                clicks = data.clicks || 0;
+                perClick = data.perClick || 1;
+                perSecond = data.perSecond || 0;
+                upgrades = data.upgrades || upgrades;
+                updateDisplay();
+                updateButtons();
+            }
+        }
+        
+        // Автосохранение каждые 10 секунд
+        setInterval(saveGame, 10000);
+        
+        // Загрузка при старте
+        window.addEventListener('load', loadGame);
+    </script>
+</body>
+</html>
