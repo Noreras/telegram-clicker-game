@@ -2,96 +2,103 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Кофейный симулятор</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
             user-select: none;
         }
         
-        body {
-            background: #2c3e50;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
+            background: #1a1a2e;
         }
         
         #game-container {
-            position: relative;
-            background: #34495e;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        
-        #game-ui {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            padding: 15px;
-            background: rgba(44, 62, 80, 0.95);
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            z-index: 100;
-            border-bottom: 2px solid #1abc9c;
-        }
-        
-        .ui-section {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .ui-title {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-        
-        .ui-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #1abc9c;
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
         }
         
         #game-canvas {
             display: block;
-            background: #2c3e50;
-            cursor: pointer;
+            width: 100%;
+            height: 100%;
+            background: #0f3460;
         }
         
-        #location-title {
-            position: absolute;
-            top: 70px;
+        #game-ui {
+            position: fixed;
+            top: env(safe-area-inset-top, 0);
             left: 0;
             right: 0;
-            text-align: center;
+            padding: 12px 16px;
+            background: linear-gradient(to bottom, rgba(26, 26, 46, 0.95), rgba(26, 26, 46, 0.8));
             color: white;
-            font-size: 20px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid #00adb5;
+        }
+        
+        .ui-item {
+            text-align: center;
+        }
+        
+        .ui-label {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-bottom: 4px;
+            color: #a0a0c0;
+        }
+        
+        .ui-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #00adb5;
+        }
+        
+        #location-indicator {
+            position: fixed;
+            top: calc(env(safe-area-inset-top, 0) + 70px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 173, 181, 0.9);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
             z-index: 99;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
         
         .notification {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #1abc9c;
+            top: calc(env(safe-area-inset-top, 0) + 110px);
+            right: 16px;
+            background: #00adb5;
             color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            max-width: 80%;
             animation: slideIn 0.3s ease;
             z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
         
         @keyframes slideIn {
@@ -100,126 +107,210 @@
         }
         
         #day-end-panel {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(44, 62, 80, 0.95);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            color: white;
-            z-index: 200;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 1000;
             display: none;
-            border: 3px solid #1abc9c;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .panel-content {
+            background: #16213e;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            border: 3px solid #00adb5;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
         }
         
         .panel-title {
-            font-size: 24px;
+            font-size: 22px;
             margin-bottom: 20px;
-            color: #1abc9c;
+            color: #00adb5;
+            font-weight: 700;
         }
         
-        .panel-stats {
-            margin: 15px 0;
-            font-size: 18px;
+        .panel-stat {
+            font-size: 17px;
+            margin: 12px 0;
+            color: #e0e0ff;
+        }
+        
+        .panel-highlight {
+            color: #00ff9d;
+            font-weight: 700;
         }
         
         .panel-button {
-            background: #1abc9c;
+            background: linear-gradient(135deg, #00adb5, #0097a7);
             color: white;
             border: none;
-            padding: 12px 30px;
+            padding: 16px 32px;
             font-size: 18px;
-            border-radius: 8px;
+            font-weight: 600;
+            border-radius: 12px;
             cursor: pointer;
-            margin-top: 20px;
-            transition: transform 0.2s;
+            margin-top: 25px;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         
-        .panel-button:hover {
-            transform: scale(1.05);
-            background: #16a085;
-        }
-        
-        .highlight {
-            color: #f1c40f;
-            font-weight: bold;
-        }
-        
-        /* Стили для объектов на канвасе */
-        .object-label {
-            position: absolute;
-            color: white;
-            font-size: 12px;
-            text-align: center;
-            transform: translate(-50%, 10px);
-            text-shadow: 1px 1px 2px black;
-            pointer-events: none;
+        .panel-button:active {
+            transform: scale(0.98);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         
         #instructions {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            color: rgba(255,255,255,0.6);
-            font-size: 14px;
-            max-width: 300px;
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom, 0) + 20px);
+            left: 16px;
+            right: 16px;
+            background: rgba(26, 26, 46, 0.9);
+            color: #a0a0c0;
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 13px;
+            line-height: 1.4;
+            text-align: center;
+            z-index: 99;
+            border: 1px solid #2d4059;
+        }
+        
+        #progress-bar {
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom, 0) + 90px);
+            left: 16px;
+            right: 16px;
+            height: 8px;
+            background: rgba(45, 64, 89, 0.5);
+            border-radius: 4px;
+            overflow: hidden;
+            z-index: 99;
+        }
+        
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00adb5, #00ff9d);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        @media (max-width: 480px) {
+            #game-ui {
+                padding: 10px 12px;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+            }
+            
+            .ui-label {
+                font-size: 10px;
+            }
+            
+            .ui-value {
+                font-size: 14px;
+            }
+            
+            #location-indicator {
+                font-size: 12px;
+                padding: 6px 16px;
+                top: calc(env(safe-area-inset-top, 0) + 60px);
+            }
+            
+            .notification {
+                font-size: 13px;
+                top: calc(env(safe-area-inset-top, 0) + 90px);
+            }
+            
+            .panel-content {
+                padding: 25px;
+            }
+            
+            .panel-title {
+                font-size: 20px;
+            }
+            
+            .panel-stat {
+                font-size: 16px;
+            }
+        }
+        
+        /* Для Telegram Web App */
+        body.telegram-webapp {
+            background: transparent;
         }
     </style>
 </head>
-<body>
+<body class="telegram-webapp">
     <div id="game-container">
         <div id="game-ui">
-            <div class="ui-section">
-                <div class="ui-title">БАЛАНС</div>
+            <div class="ui-item">
+                <div class="ui-label">БАЛАНС</div>
                 <div class="ui-value" id="money">$100</div>
             </div>
-            <div class="ui-section">
-                <div class="ui-title">ДЕНЬ</div>
+            <div class="ui-item">
+                <div class="ui-label">ДЕНЬ</div>
                 <div class="ui-value" id="day">1</div>
             </div>
-            <div class="ui-section">
-                <div class="ui-title">КЛИЕНТЫ</div>
+            <div class="ui-item">
+                <div class="ui-label">КЛИЕНТЫ</div>
                 <div class="ui-value" id="customers">0/5</div>
             </div>
-            <div class="ui-section">
-                <div class="ui-title">ВРЕМЯ ДНЯ</div>
+            <div class="ui-item">
+                <div class="ui-label">ВРЕМЯ</div>
                 <div class="ui-value" id="day-time">3:00</div>
             </div>
         </div>
         
-        <div id="location-title">БАРНАЯ ЗОНА</div>
+        <div id="location-indicator">БАРНАЯ ЗОНА</div>
         
-        <canvas id="game-canvas" width="800" height="600"></canvas>
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="progress-bar">
+            <div id="progress-fill"></div>
+        </div>
         
         <div id="instructions">
-            🎮 Кликните, чтобы переместить персонажа<br>
-            🟨 Кликните на объект для взаимодействия
+            👆 Тапните для перемещения • 🎯 Тапните на объект для действия
         </div>
         
         <div id="day-end-panel">
-            <div class="panel-title">🎉 СМЕНА ЗАВЕРШЕНА!</div>
-            <div class="panel-stats">Вы обслужили <span class="highlight" id="served-count">0</span> клиентов</div>
-            <div class="panel-stats">Заработано: <span class="highlight" id="earned-money">$0</span></div>
-            <div class="panel-stats">Общий баланс: <span class="highlight" id="total-money">$100</span></div>
-            <button class="panel-button" onclick="startNewDay()">Начать новый день</button>
+            <div class="panel-content">
+                <div class="panel-title">🎉 СМЕНА ЗАВЕРШЕНА!</div>
+                <div class="panel-stat">Обслужено клиентов: <span class="panel-highlight" id="served-count">0</span></div>
+                <div class="panel-stat">Заработано за день: <span class="panel-highlight" id="earned-money">$0</span></div>
+                <div class="panel-stat">Общий баланс: <span class="panel-highlight" id="total-money">$100</span></div>
+                <button class="panel-button" onclick="startNewDay()">Начать новый день</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // ==================== КОНСТАНТЫ И ПЕРЕМЕННЫЕ ====================
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
         
-        // Размеры игры
-        const GAME_WIDTH = 800;
-        const GAME_HEIGHT = 600;
+        // Адаптивные размеры для мобильных
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
         
-        // Игровое состояние
-        let gameState = {
-            location: 'bar', // 'bar' или 'storage'
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // ==================== ИГРОВОЕ СОСТОЯНИЕ ====================
+        const gameState = {
+            location: 'bar',
             money: 100,
             day: 1,
             customersToday: 0,
@@ -235,10 +326,11 @@
                 syrup: 0
             },
             
-            // Цены и настройки
             prices: {
                 coffee: 50,
-                tea: 40
+                tea: 40,
+                latte: 80,
+                cappuccino: 90
             },
             
             costs: {
@@ -255,51 +347,212 @@
                 syrup: 10
             },
             
-            // Текущие заказы
             currentCustomer: null,
             currentOrder: null,
             isPreparing: false,
             preparationProgress: 0,
             preparationTotal: 0,
             
-            // Персонаж
             player: {
-                x: 400,
-                y: 300,
+                x: 0,
+                y: 0,
                 size: 20,
-                color: '#000000', // Черный - стоит
+                color: '#000000',
                 targetX: null,
                 targetY: null,
-                speed: 3,
+                speed: 4,
                 isMoving: false,
                 interactionTarget: null
             },
             
-            // Клиенты
             customers: [],
             nextCustomerTime: 0,
             
-            // Объекты игры
+            // Размеры объектов адаптивные
             objects: {
-                bar: [
-                    { id: 'cashier', type: 'cashier', x: 100, y: 100, width: 40, height: 30, color: '#3498db', label: 'Касса' },
-                    { id: 'coffee_machine', type: 'machine', x: 200, y: 100, width: 40, height: 40, color: '#e74c3c', label: 'Кофемашина' },
-                    { id: 'tea_maker', type: 'machine', x: 300, y: 100, width: 40, height: 40, color: '#2ecc71', label: 'Чайник' },
-                    { id: 'table1', type: 'table', x: 150, y: 400, width: 60, height: 40, color: '#8e44ad', label: 'Столик 1' },
-                    { id: 'table2', type: 'table', x: 250, y: 400, width: 60, height: 40, color: '#8e44ad', label: 'Столик 2' },
-                    { id: 'door', type: 'door', x: 700, y: 300, width: 30, height: 60, color: '#f39c12', label: 'Склад →' }
-                ],
-                storage: [
-                    { id: 'coffee_shelf', type: 'shelf', x: 200, y: 150, width: 60, height: 80, color: '#795548', label: 'Кофе' },
-                    { id: 'tea_shelf', type: 'shelf', x: 300, y: 150, width: 60, height: 80, color: '#4CAF50', label: 'Чай' },
-                    { id: 'milk_shelf', type: 'shelf', x: 400, y: 150, width: 60, height: 80, color: '#FFEBEE', label: 'Молоко' },
-                    { id: 'syrup_shelf', type: 'shelf', x: 500, y: 150, width: 60, height: 80, color: '#FF9800', label: 'Сироп' },
-                    { id: 'order_board', type: 'board', x: 400, y: 300, width: 80, height: 60, color: '#607D8B', label: 'Заказать' },
-                    { id: 'end_day', type: 'button', x: 400, y: 450, width: 100, height: 40, color: '#f44336', label: 'Закрыть смену' },
-                    { id: 'door_back', type: 'door', x: 100, y: 300, width: 30, height: 60, color: '#f39c12', label: '← Бар' }
-                ]
+                bar: [],
+                storage: []
             }
         };
+        
+        // Инициализация объектов с адаптивными размерами
+        function initObjects() {
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Рассчитываем размеры объектов в зависимости от экрана
+            const objSize = Math.min(width, height) * 0.05;
+            const playerSize = Math.min(width, height) * 0.04;
+            
+            gameState.player.size = playerSize;
+            
+            gameState.objects.bar = [
+                { 
+                    id: 'cashier', type: 'cashier', 
+                    x: width * 0.15, y: height * 0.2, 
+                    width: objSize * 2, height: objSize * 1.5, 
+                    color: '#3498db', label: 'Касса',
+                    collision: true
+                },
+                { 
+                    id: 'coffee_machine', type: 'machine', 
+                    x: width * 0.3, y: height * 0.2, 
+                    width: objSize * 1.5, height: objSize * 1.5, 
+                    color: '#e74c3c', label: 'Кофе',
+                    collision: true
+                },
+                { 
+                    id: 'tea_maker', type: 'machine', 
+                    x: width * 0.45, y: height * 0.2, 
+                    width: objSize * 1.5, height: objSize * 1.5, 
+                    color: '#2ecc71', label: 'Чай',
+                    collision: true
+                },
+                { 
+                    id: 'table1', type: 'table', 
+                    x: width * 0.25, y: height * 0.7, 
+                    width: objSize * 3, height: objSize * 1.5, 
+                    color: '#9b59b6', label: 'Стол 1',
+                    collision: true
+                },
+                { 
+                    id: 'table2', type: 'table', 
+                    x: width * 0.5, y: height * 0.7, 
+                    width: objSize * 3, height: objSize * 1.5, 
+                    color: '#9b59b6', label: 'Стол 2',
+                    collision: true
+                },
+                { 
+                    id: 'door', type: 'door', 
+                    x: width * 0.9, y: height * 0.5, 
+                    width: objSize * 0.8, height: objSize * 3, 
+                    color: '#f39c12', label: '→ Склад',
+                    collision: false
+                }
+            ];
+            
+            gameState.objects.storage = [
+                { 
+                    id: 'coffee_shelf', type: 'shelf', 
+                    x: width * 0.2, y: height * 0.3, 
+                    width: objSize * 3, height: objSize * 2, 
+                    color: '#795548', label: 'Кофе',
+                    collision: true
+                },
+                { 
+                    id: 'tea_shelf', type: 'shelf', 
+                    x: width * 0.4, y: height * 0.3, 
+                    width: objSize * 3, height: objSize * 2, 
+                    color: '#4CAF50', label: 'Чай',
+                    collision: true
+                },
+                { 
+                    id: 'milk_shelf', type: 'shelf', 
+                    x: width * 0.6, y: height * 0.3, 
+                    width: objSize * 3, height: objSize * 2, 
+                    color: '#FFEBEE', label: 'Молоко',
+                    collision: true
+                },
+                { 
+                    id: 'syrup_shelf', type: 'shelf', 
+                    x: width * 0.8, y: height * 0.3, 
+                    width: objSize * 3, height: objSize * 2, 
+                    color: '#FF9800', label: 'Сироп',
+                    collision: true
+                },
+                { 
+                    id: 'order_board', type: 'board', 
+                    x: width * 0.4, y: height * 0.6, 
+                    width: objSize * 4, height: objSize * 2, 
+                    color: '#607D8B', label: 'Заказать',
+                    collision: true
+                },
+                { 
+                    id: 'end_day', type: 'button', 
+                    x: width * 0.4, y: height * 0.8, 
+                    width: objSize * 5, height: objSize * 2, 
+                    color: '#e74c3c', label: 'Закрыть смену',
+                    collision: true
+                },
+                { 
+                    id: 'door_back', type: 'door', 
+                    x: width * 0.1, y: height * 0.5, 
+                    width: objSize * 0.8, height: objSize * 3, 
+                    color: '#f39c12', label: '← Бар',
+                    collision: false
+                }
+            ];
+            
+            // Установка начальной позиции игрока
+            if (gameState.location === 'bar') {
+                gameState.player.x = width * 0.1;
+                gameState.player.y = height * 0.5;
+            } else {
+                gameState.player.x = width * 0.9;
+                gameState.player.y = height * 0.5;
+            }
+        }
+        
+        // ==================== КОЛЛИЗИИ ====================
+        function checkCollision(x, y, object) {
+            const left = object.x - object.width / 2;
+            const right = object.x + object.width / 2;
+            const top = object.y - object.height / 2;
+            const bottom = object.y + object.height / 2;
+            
+            return x >= left && x <= right && y >= top && y <= bottom;
+        }
+        
+        function isValidPosition(x, y) {
+            const objects = gameState.objects[gameState.location];
+            
+            for (const obj of objects) {
+                if (obj.collision && checkCollision(x, y, obj)) {
+                    return false;
+                }
+            }
+            
+            // Проверяем границы экрана
+            return x > gameState.player.size && 
+                   x < canvas.width - gameState.player.size && 
+                   y > gameState.player.size && 
+                   y < canvas.height - gameState.player.size;
+        }
+        
+        function findValidPath(startX, startY, targetX, targetY) {
+            // Простой алгоритм поиска пути (можно улучшить)
+            const dx = targetX - startX;
+            const dy = targetY - startY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const steps = Math.ceil(distance / gameState.player.speed);
+            
+            for (let i = 1; i <= steps; i++) {
+                const x = startX + (dx / steps) * i;
+                const y = startY + (dy / steps) * i;
+                
+                if (!isValidPosition(x, y)) {
+                    // Если путь заблокирован, ищем обходной путь
+                    const angle = Math.atan2(dy, dx);
+                    const offsetX = Math.cos(angle + Math.PI/2) * 50;
+                    const offsetY = Math.sin(angle + Math.PI/2) * 50;
+                    
+                    const newX1 = startX + offsetX;
+                    const newY1 = startY + offsetY;
+                    const newX2 = startX - offsetX;
+                    const newY2 = startY - offsetY;
+                    
+                    if (isValidPosition(newX1, newY1)) {
+                        return { x: newX1, y: newY1 };
+                    } else if (isValidPosition(newX2, newY2)) {
+                        return { x: newX2, y: newY2 };
+                    }
+                    
+                    return null;
+                }
+            }
+            
+            return { x: targetX, y: targetY };
+        }
         
         // ==================== УТИЛИТЫ ====================
         function showNotification(text) {
@@ -311,9 +564,8 @@
             setTimeout(() => {
                 notification.style.opacity = '0';
                 setTimeout(() => notification.remove(), 300);
-            }, 3000);
+            }, 2500);
             
-            // Если игра в Telegram Web App, отправляем уведомление
             if (window.Telegram && window.Telegram.WebApp) {
                 window.Telegram.WebApp.showAlert(text);
             }
@@ -328,8 +580,12 @@
             const seconds = gameState.dayTime % 60;
             document.getElementById('day-time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             
-            document.getElementById('location-title').textContent = 
+            document.getElementById('location-indicator').textContent = 
                 gameState.location === 'bar' ? 'БАРНАЯ ЗОНА' : 'СКЛАД';
+            
+            // Обновляем прогресс-бар
+            const progress = (gameState.customersServed / 5) * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
         }
         
         // ==================== КЛИЕНТЫ ====================
@@ -340,23 +596,22 @@
             const customer = {
                 id: Date.now(),
                 table: table,
-                x: 700,
-                y: 100,
-                size: 15,
-                color: '#FFFFFF', // Белый - идет
-                state: 'walking', // walking, waiting, eating, leaving
+                x: canvas.width * 0.9,
+                y: canvas.height * 0.2,
+                size: Math.min(canvas.width, canvas.height) * 0.03,
+                color: '#FFFFFF',
+                state: 'walking',
                 order: null,
                 patience: 100,
                 patienceTimer: 0
             };
             
-            // Выбираем случайный заказ
             const orders = ['coffee', 'tea'];
             customer.order = orders[Math.floor(Math.random() * orders.length)];
             
             gameState.customers.push(customer);
             gameState.customersToday++;
-            gameState.nextCustomerTime = Date.now() + 15000; // Следующий через 15 секунд
+            gameState.nextCustomerTime = Date.now() + 15000;
             
             showNotification('🆕 Новый клиент!');
             updateUI();
@@ -364,37 +619,39 @@
         
         function updateCustomers() {
             gameState.customers.forEach((customer, index) => {
-                // Обновление позиции
                 if (customer.state === 'walking') {
                     const table = gameState.objects.bar.find(obj => obj.id === customer.table);
-                    const dx = table.x - customer.x;
-                    const dy = table.y - 50 - customer.y;
+                    const targetX = table.x;
+                    const targetY = table.y - table.height;
+                    
+                    const dx = targetX - customer.x;
+                    const dy = targetY - customer.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     
-                    if (distance < 2) {
+                    if (distance < 5) {
                         customer.state = 'waiting';
-                        customer.color = '#FFFF00'; // Желтый - ждет
+                        customer.color = '#FFFF00';
                     } else {
-                        customer.x += (dx / distance) * 2;
-                        customer.y += (dy / distance) * 2;
+                        customer.x += (dx / distance) * 3;
+                        customer.y += (dy / distance) * 3;
                     }
                 }
                 else if (customer.state === 'eating') {
                     customer.patienceTimer++;
-                    if (customer.patienceTimer > 180) { // Ест 3 секунды
+                    if (customer.patienceTimer > 180) {
                         customer.state = 'leaving';
-                        customer.color = '#FFFFFF'; // Белый - уходит
+                        customer.color = '#FFFFFF';
                     }
                 }
                 else if (customer.state === 'leaving') {
-                    customer.x += 2;
-                    if (customer.x > 850) {
+                    customer.x += 3;
+                    if (customer.x > canvas.width + 50) {
                         gameState.customers.splice(index, 1);
                     }
                 }
                 else if (customer.state === 'waiting') {
                     customer.patienceTimer++;
-                    if (customer.patienceTimer > 300) { // Ждет 5 секунд
+                    if (customer.patienceTimer > 300) {
                         customer.state = 'leaving';
                         customer.color = '#FFFFFF';
                         showNotification('😠 Клиент ушел недовольный');
@@ -409,16 +666,14 @@
             
             if (customer.order === drinkType) {
                 customer.state = 'eating';
-                customer.color = '#00FF00'; // Зеленый - ест
+                customer.color = '#00FF00';
                 customer.patienceTimer = 0;
                 
-                // Начисляем деньги
                 const earned = gameState.prices[drinkType];
                 gameState.money += earned;
                 gameState.earnedThisDay += earned;
                 gameState.customersServed++;
                 
-                // Списываем ингредиенты
                 gameState.inventory[drinkType]--;
                 
                 showNotification(`✅ Обслужен клиент! +$${earned}`);
@@ -432,7 +687,6 @@
         function updatePlayer() {
             const player = gameState.player;
             
-            // Движение к цели
             if (player.targetX !== null && player.targetY !== null) {
                 const dx = player.targetX - player.x;
                 const dy = player.targetY - player.y;
@@ -444,26 +698,48 @@
                     player.targetX = null;
                     player.targetY = null;
                     player.isMoving = false;
-                    player.color = '#000000'; // Черный - стоит
+                    player.color = '#000000';
                     
-                    // Взаимодействие при достижении цели
                     if (player.interactionTarget) {
                         interactWithObject(player.interactionTarget);
                         player.interactionTarget = null;
                     }
                 } else {
-                    player.x += (dx / distance) * player.speed;
-                    player.y += (dy / distance) * player.speed;
-                    player.isMoving = true;
-                    player.color = '#808080'; // Серый - идет
+                    // Проверяем коллизии по пути
+                    const nextX = player.x + (dx / distance) * player.speed;
+                    const nextY = player.y + (dy / distance) * player.speed;
+                    
+                    if (isValidPosition(nextX, nextY)) {
+                        player.x = nextX;
+                        player.y = nextY;
+                        player.isMoving = true;
+                        player.color = '#808080';
+                    } else {
+                        // Путь заблокирован, ищем обходной путь
+                        const newTarget = findValidPath(player.x, player.y, player.targetX, player.targetY);
+                        if (newTarget) {
+                            player.targetX = newTarget.x;
+                            player.targetY = newTarget.y;
+                        } else {
+                            player.targetX = null;
+                            player.targetY = null;
+                            player.interactionTarget = null;
+                            showNotification('🚫 Путь заблокирован!');
+                        }
+                    }
                 }
             }
         }
         
         function movePlayerTo(x, y, interactWith = null) {
-            gameState.player.targetX = x;
-            gameState.player.targetY = y;
-            gameState.player.interactionTarget = interactWith;
+            const validTarget = findValidPath(gameState.player.x, gameState.player.y, x, y);
+            if (validTarget) {
+                gameState.player.targetX = validTarget.x;
+                gameState.player.targetY = validTarget.y;
+                gameState.player.interactionTarget = interactWith;
+            } else {
+                showNotification('🚫 Не могу дойти до этой точки!');
+            }
         }
         
         // ==================== ВЗАИМОДЕЙСТВИЯ ====================
@@ -473,20 +749,26 @@
             if (object.type === 'door') {
                 // Переход между локациями
                 gameState.location = gameState.location === 'bar' ? 'storage' : 'bar';
-                player.x = gameState.location === 'bar' ? 100 : 700;
-                player.y = 300;
-                player.targetX = null;
-                player.targetY = null;
+                
+                // Устанавливаем позицию игрока рядом с дверью
+                if (gameState.location === 'bar') {
+                    gameState.player.x = canvas.width * 0.1;
+                    gameState.player.y = canvas.height * 0.5;
+                } else {
+                    gameState.player.x = canvas.width * 0.9;
+                    gameState.player.y = canvas.height * 0.5;
+                }
+                
+                gameState.player.targetX = null;
+                gameState.player.targetY = null;
                 showNotification(`Перешли в ${gameState.location === 'bar' ? 'бар' : 'склад'}`);
             }
             else if (object.type === 'cashier' && gameState.currentCustomer) {
-                // Принять заказ
                 gameState.currentOrder = gameState.currentCustomer.order;
                 gameState.currentCustomer = null;
                 showNotification(`Заказ принят: ${gameState.currentOrder === 'coffee' ? 'Кофе' : 'Чай'}`);
             }
             else if (object.type === 'machine' && gameState.currentOrder) {
-                // Начать приготовление
                 if (gameState.inventory[gameState.currentOrder] <= 0) {
                     showNotification('❌ Не хватает ингредиентов!');
                     return;
@@ -494,12 +776,11 @@
                 
                 gameState.isPreparing = true;
                 gameState.preparationProgress = 0;
-                gameState.preparationTotal = gameState.currentOrder === 'coffee' ? 180 : 120; // 3 или 2 секунды
-                player.color = '#FFFF00'; // Желтый - работает
+                gameState.preparationTotal = gameState.currentOrder === 'coffee' ? 180 : 120;
+                player.color = '#FFFF00';
                 showNotification(`Приготовление ${gameState.currentOrder === 'coffee' ? 'кофе' : 'чая'}...`);
             }
             else if (object.type === 'table') {
-                // Проверить, есть ли клиент за столиком и отдать заказ
                 const drinkType = gameState.currentOrder;
                 if (drinkType && serveCustomer(object.id, drinkType)) {
                     gameState.currentOrder = null;
@@ -507,18 +788,15 @@
                 }
             }
             else if (object.type === 'shelf') {
-                // Показать информацию о запасах
                 const ingredient = object.id.replace('_shelf', '');
                 const current = gameState.inventory[ingredient];
                 const max = gameState.storageCapacity[ingredient];
                 showNotification(`${object.label}: ${current}/${max}`);
             }
             else if (object.type === 'board') {
-                // Заказать ингредиенты
                 orderIngredients();
             }
             else if (object.type === 'button' && object.id === 'end_day') {
-                // Завершить день
                 endDay();
             }
         }
@@ -526,6 +804,7 @@
         function orderIngredients() {
             let orderText = "Заказать ингредиенты:\n";
             let totalCost = 0;
+            let ordered = false;
             
             ['coffee', 'tea', 'milk', 'syrup'].forEach(ingredient => {
                 const current = gameState.inventory[ingredient];
@@ -534,23 +813,26 @@
                 
                 if (need > 0) {
                     const cost = need * gameState.costs[ingredient];
-                    totalCost += cost;
                     
-                    if (gameState.money >= totalCost) {
+                    if (gameState.money >= totalCost + cost) {
                         gameState.inventory[ingredient] = max;
+                        totalCost += cost;
                         gameState.money -= cost;
                         orderText += `✅ ${ingredient}: +${need} (-$${cost})\n`;
+                        ordered = true;
                     } else {
-                        orderText += `❌ ${ingredient}: недостаточно денег\n`;
+                        orderText += `❌ ${ingredient}: не хватает денег\n`;
                     }
                 }
             });
             
-            if (totalCost > 0) {
+            if (ordered) {
                 showNotification(orderText);
                 updateUI();
-            } else {
+            } else if (totalCost === 0) {
                 showNotification("Все запасы полные!");
+            } else {
+                showNotification("Недостаточно денег для заказа!");
             }
         }
         
@@ -558,11 +840,11 @@
         function updateGame() {
             if (!gameState.dayActive) return;
             
-            // Обновление таймера дня
+            // Обновление таймера дня (только отображение, не завершение)
             gameState.dayTime--;
-            if (gameState.dayTime <= 0) {
+            if (gameState.dayTime < 0) {
                 gameState.dayTime = 0;
-                endDay();
+                // Время не заканчивает день - только визуальный таймер
             }
             
             // Спавн новых клиентов
@@ -570,13 +852,9 @@
                 spawnCustomer();
             }
             
-            // Обновление клиентов
             updateCustomers();
-            
-            // Обновление персонажа
             updatePlayer();
             
-            // Обновление приготовления
             if (gameState.isPreparing) {
                 gameState.preparationProgress++;
                 if (gameState.preparationProgress >= gameState.preparationTotal) {
@@ -585,7 +863,6 @@
                 }
             }
             
-            // Автоматически принимать заказы от клиентов
             if (!gameState.currentCustomer) {
                 const waitingCustomer = gameState.customers.find(c => c.state === 'waiting');
                 if (waitingCustomer) {
@@ -599,33 +876,57 @@
         
         // ==================== ОТРИСОВКА ====================
         function drawGame() {
-            // Очистка канваса
-            ctx.fillStyle = '#2c3e50';
-            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            // Очистка
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Рисуем объекты текущей локации
+            // Рисуем сетку фона
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            const gridSize = 50;
+            
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Рисуем объекты
             const objects = gameState.objects[gameState.location];
             objects.forEach(obj => {
+                // Рисуем объект
                 ctx.fillStyle = obj.color;
+                ctx.fillRect(
+                    obj.x - obj.width/2, 
+                    obj.y - obj.height/2, 
+                    obj.width, 
+                    obj.height
+                );
                 
-                if (obj.type === 'table') {
-                    // Столик
-                    ctx.fillRect(obj.x - obj.width/2, obj.y - obj.height/2, obj.width, obj.height);
-                    ctx.strokeStyle = '#fff';
-                    ctx.strokeRect(obj.x - obj.width/2, obj.y - obj.height/2, obj.width, obj.height);
-                } else if (obj.type === 'door') {
-                    // Дверь
-                    ctx.fillRect(obj.x - obj.width/2, obj.y - obj.height/2, obj.width, obj.height);
-                } else {
-                    // Остальные объекты
-                    ctx.fillRect(obj.x - obj.width/2, obj.y - obj.height/2, obj.width, obj.height);
-                }
+                // Контур объекта
+                ctx.strokeStyle = obj.collision ? '#ffffff' : '#ffcc00';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(
+                    obj.x - obj.width/2, 
+                    obj.y - obj.height/2, 
+                    obj.width, 
+                    obj.height
+                );
                 
                 // Подпись объекта
-                ctx.fillStyle = '#fff';
-                ctx.font = '12px Arial';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `${Math.min(canvas.width, canvas.height) * 0.02}px Arial`;
                 ctx.textAlign = 'center';
-                ctx.fillText(obj.label, obj.x, obj.y + obj.height/2 + 15);
+                ctx.textBaseline = 'middle';
+                ctx.fillText(obj.label, obj.x, obj.y);
             });
             
             // Рисуем клиентов (только в баре)
@@ -634,182 +935,52 @@
                     ctx.fillStyle = customer.color;
                     
                     if (customer.state === 'walking' || customer.state === 'leaving') {
-                        // Треугольник для идущих/уходящих
+                        // Треугольник для движения
                         ctx.beginPath();
                         ctx.moveTo(customer.x, customer.y - customer.size/2);
                         ctx.lineTo(customer.x - customer.size/2, customer.y + customer.size/2);
                         ctx.lineTo(customer.x + customer.size/2, customer.y + customer.size/2);
                         ctx.closePath();
                         ctx.fill();
+                        
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
                     } else {
-                        // Круг для ждущих/едящих
+                        // Круг для ожидания/едения
                         ctx.beginPath();
                         ctx.arc(customer.x, customer.y, customer.size, 0, Math.PI * 2);
                         ctx.fill();
+                        
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
                     }
                     
                     // Индикатор заказа
                     if (customer.state === 'waiting') {
                         ctx.fillStyle = customer.order === 'coffee' ? '#8B4513' : '#4CAF50';
                         ctx.beginPath();
-                        ctx.arc(customer.x, customer.y - 20, 8, 0, Math.PI * 2);
+                        ctx.arc(customer.x, customer.y - customer.size * 1.5, customer.size * 0.6, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 });
             }
             
             // Рисуем персонажа
-            ctx.fillStyle = gameState.player.color;
-            ctx.fillRect(
-                gameState.player.x - gameState.player.size/2,
-                gameState.player.y - gameState.player.size/2,
-                gameState.player.size,
-                gameState.player.size
-            );
+            const player = gameState.player;
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+            ctx.fill();
             
-            // Индикатор текущего заказа
+            // Контур персонажа
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Индикатор заказа над персонажем
             if (gameState.currentOrder) {
                 ctx.fillStyle = gameState.currentOrder === 'coffee' ? '#8B4513' : '#4CAF50';
                 ctx.beginPath();
-                ctx.arc(gameState.player.x, gameState.player.y - 25, 10, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#fff';
-                ctx.font = '10px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(gameState.currentOrder === 'coffee' ? 'C' : 'T', 
-                           gameState.player.x, gameState.player.y - 22);
-            }
-            
-            // Прогресс приготовления
-            if (gameState.isPreparing) {
-                const progress = gameState.preparationProgress / gameState.preparationTotal;
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.fillRect(10, GAME_HEIGHT - 30, GAME_WIDTH - 20, 20);
-                
-                ctx.fillStyle = '#1abc9c';
-                ctx.fillRect(10, GAME_HEIGHT - 30, (GAME_WIDTH - 20) * progress, 20);
-                
-                ctx.fillStyle = '#fff';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(
-                    `Приготовление ${gameState.currentOrder === 'coffee' ? 'кофе' : 'чая'}...`,
-                    GAME_WIDTH / 2,
-                    GAME_HEIGHT - 16
-                );
-            }
-            
-            // Информация о складе (только на складе)
-            if (gameState.location === 'storage') {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                ctx.fillRect(10, 10, 200, 100);
-                
-                ctx.fillStyle = '#fff';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'left';
-                ctx.fillText('📦 ЗАПАСЫ:', 20, 30);
-                
-                let y = 50;
-                ['coffee', 'tea', 'milk', 'syrup'].forEach(ingredient => {
-                    const current = gameState.inventory[ingredient];
-                    const max = gameState.storageCapacity[ingredient];
-                    const percent = (current / max) * 100;
-                    
-                    ctx.fillStyle = percent < 30 ? '#e74c3c' : percent < 70 ? '#f39c12' : '#2ecc71';
-                    ctx.fillText(
-                        `${ingredient}: ${current}/${max}`,
-                        20, y
-                    );
-                    y += 20;
-                });
-            }
-        }
-        
-        // ==================== УПРАВЛЕНИЕ ====================
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            // Проверяем, кликнули ли на объект
-            const objects = gameState.objects[gameState.location];
-            let clickedObject = null;
-            
-            for (const obj of objects) {
-                const objLeft = obj.x - obj.width/2;
-                const objRight = obj.x + obj.width/2;
-                const objTop = obj.y - obj.height/2;
-                const objBottom = obj.y + obj.height/2;
-                
-                if (x >= objLeft && x <= objRight && y >= objTop && y <= objBottom) {
-                    clickedObject = obj;
-                    break;
-                }
-            }
-            
-            if (clickedObject) {
-                // Идем к объекту для взаимодействия
-                movePlayerTo(clickedObject.x, clickedObject.y, clickedObject);
-            } else {
-                // Просто перемещаемся
-                movePlayerTo(x, y);
-            }
-        });
-        
-        // ==================== СИСТЕМА ДНЕЙ ====================
-        function endDay() {
-            gameState.dayActive = false;
-            document.getElementById('day-end-panel').style.display = 'block';
-            document.getElementById('served-count').textContent = gameState.customersServed;
-            document.getElementById('earned-money').textContent = `$${gameState.earnedThisDay}`;
-            document.getElementById('total-money').textContent = `$${gameState.money}`;
-            
-            showNotification(`📊 День ${gameState.day} завершен!`);
-        }
-        
-        function startNewDay() {
-            gameState.day++;
-            gameState.customersToday = 0;
-            gameState.customersServed = 0;
-            gameState.dayTime = 180;
-            gameState.dayActive = true;
-            gameState.earnedThisDay = 0;
-            gameState.customers = [];
-            gameState.nextCustomerTime = Date.now() + 5000; // Первый клиент через 5 секунд
-            
-            document.getElementById('day-end-panel').style.display = 'none';
-            showNotification(`🎮 Начинаем день ${gameState.day}!`);
-        }
-        
-        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-        function init() {
-            // Настройка Telegram Web App
-            if (window.Telegram && window.Telegram.WebApp) {
-                Telegram.WebApp.ready();
-                Telegram.WebApp.expand();
-                showNotification('Игра загружена! Начните обслуживать клиентов.');
-            }
-            
-            // Запуск игрового цикла
-            function gameLoop() {
-                updateGame();
-                drawGame();
-                requestAnimationFrame(gameLoop);
-            }
-            
-            gameLoop();
-            
-            // Первый клиент через 5 секунд
-            setTimeout(() => {
-                if (gameState.dayActive) {
-                    gameState.nextCustomerTime = Date.now() + 5000;
-                }
-            }, 5000);
-        }
-        
-        // Запуск игры при загрузке страницы
-        window.addEventListener('load', init);
-    </script>
-</body>
-</html>
+                ctx.arc(player.x, player.y - player.size * 2, player.size * 
