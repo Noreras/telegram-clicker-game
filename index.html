@@ -1058,12 +1058,25 @@
                 showNotification(`Приготовление ${gameState.currentOrder === 'coffee' ? 'кофе' : 'чая'}...`);
             }
             else if (object.type === 'table') {
-                // Отдать заказ клиенту
-                const drinkType = gameState.currentOrder;
-                if (drinkType && serveCustomer(object.id, drinkType)) {
-                    gameState.currentOrder = null;
-                    gameState.isPreparing = false;
-                    gameState.player.color = '#000000'; // Черный квадрат (стоит)
+                // Проверяем, есть ли клиент за этим столиком
+                const customer = gameState.customers.find(c => c.table === object.id);
+                if (customer) {
+                    if (customer.state === 'waiting' && !gameState.currentCustomer) {
+                        // Принять заказ от клиента
+                        gameState.currentCustomer = customer;
+                        gameState.currentOrder = customer.order;
+                        showNotification(`Принял заказ: ${customer.order === 'coffee' ? 'Кофе' : 'Чай'}`);
+                    } else if (customer.state === 'waiting' && gameState.currentOrder) {
+                        // Отдать заказ клиенту
+                        if (serveCustomer(object.id, gameState.currentOrder)) {
+                            gameState.currentOrder = null;
+                            gameState.currentCustomer = null;
+                        }
+                    } else {
+                        showNotification(`Клиент ${customer.state === 'eating' ? 'ест' : 'ждет'}`);
+                    }
+                } else {
+                    showNotification('Столик пуст');
                 }
             }
             else if (object.type === 'shelf') {
@@ -1486,3 +1499,4 @@
     </script>
 </body>
 </html>
+
