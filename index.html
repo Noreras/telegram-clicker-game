@@ -279,6 +279,736 @@
             day: 1,
             customersToday: 0,
             customersServed: 0,
+            dayTime: 180, // 3 минуты = 180 секунд
+            dayActive: true,
+            earnedThisDay: 0,
+            spentThisDay: 0,
+            
+            inventory: {
+                coffee: 10,
+                tea: 10,
+                milk: 0,
+                syrup: 0
+            },
+            
+            prices: { coffee: 50, tea: 40 },
+            costs: { coffee: 20, tea: 15, milk: 30, syrup: 25 },
+            storageCapacity: { coffee: 20, tea: 20, milk: 10, syrup: 10 },
+            
+            currentOrder: null,
+            isPreparing: false,
+            preparationProgress: 0,
+            preparationTotal: 0,
+            
+            player: {
+                x: 400, y: 300, size: 20, color: '#000000',
+                targetX: null, targetY: null, speed: 3, isMoving: false, interactionTarget: null
+            },
+            
+            customers: [],
+            nextCustomerTime: 0,
+            
+            objects: {
+                bar: [
+                    { id: 'cashier', type: 'stats', x: 100, y: 100, width: 40, height: 30, color: '#3498db', label: '📊 Статистика' },
+                    { id: 'coffee_machine', type: 'machine', x: 200, y: 100, width: 40, height: 40, color: '#e74c3c', label: 'Кофемашина' },
+                    { id: 'tea_maker', type: 'machine', x: 300, y: 100, width: 40, height: 40, color: '#2ecc71', label: 'Чайник' },
+                    { id: 'table1', type: 'table', x: 150, y: 400, width: 60, height: 40, color: '#8e44ad', label: 'Столик 1' },
+                    { id: 'table2', type: 'table', x: 250, y: 400, width: 60, height: 40, color: '#8e44ad', label: 'Столик 2' },
+                    { id: 'door', type: 'door', x: 700, y: 300, width: 30, height: 60, color: '#f39c12', label: 'Склад →' }
+                ],
+                storage: [
+                    { id: 'coffee_shelf', type: 'shelf', x: 200, y: 150, width: 60, height: 80, color: '#795548', label: 'Кофе' },
+                    { id: 'tea_shelf', type: 'shelf', x: 300, y: 150, width: 60, height: 80, color: '#4CAF50', label: 'Чай' },
+                    { id: 'milk_shelf', type: 'shelf', x: 400, y: 150, width: 60, height: 80, color: '#FFEBEE', label: 'Молоко' },
+                    { id: 'syrup_shelf', type: 'shelf', x: 500, y: 150, width: 60, height: 80, color: '#FF9800', label: 'Сироп' },
+                    { id: 'order_board', type: 'order', x: 400, y: 300, width: 80, height: 60, color: '#607D8B', label: '📦 Заказать' },
+                    { id: 'end_day', type: 'button', x: 400, y: 450, width: 100, height: 40, color: '#f44336', label: 'Закрыть смену' },
+                    { id: 'door_back', type: 'door', x: 100, y: 300, width: 30, height: 60, color: '#f39c12', label: '← Бар' }
+                ]
+            }
+        };
+
+        // ==================== УТИЛИТЫ ====================
+        function showNotification(text) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = text;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+            
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.showAlert(text);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('money').textContent = `$${gameState.money}`;
+            document.getElementById('day').textContent = gameState.day;
+            document.getElementById('customers').textContent = `${gameState.customersServed}/${gameState.customersToday}`;
+            
+            const minutes = Math.floor(gameState.dayTime / 60);
+            const seconds = gameState.dayTime % 60;
+            document.getElementById('day-time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('location-title').textContent = 
+                gameState.location === 'bar' ? 'БАРНАЯ ЗОНА' : 'СКЛАД';
+        }
+
+        // ==================== КЛИЕНТЫ ====================
+        function spawnCustomer() {
+            const freeTable = gameState.customers.length < 2 && gameState.customersToday < 5;
+            if (!freeTable || !gameState.dayActive) return;
+            
+            const table = gameState.customers.length === 0 ? 'table1' : 'table2';
+            const customer = {
+                id: Date.now(),
+                table: table,
+                x: 700,
+                y: 100,
+                size: 15,
+                color: '#FFFFFF',
+                state: 'walking',
+                order: ['coffee', 'tea'][Math.floor(Math.random() * 2)],
+                patience: 100,
+                patienceTimer: 0
+            };
+            
+            gameState.customers.push(customer);
+            gameState.customersToday++;
+            gameState.nextCustomerTime = Date.now() + (15000 + Math.random() * 15000);
+            
+            showNotification('🆕 Новый клиент!');
+            updateUI();
+        }
+
+        function updateCustomers() {
+            gameState.customers.forEach((customer, index) => {
+                if (customer.state === 'walking') {
+                    const table = gameState.objects.bar.find(o => o.id === customer.table);
+                    const dx = table.x - customer.x;
+                    const dy = table.y - 50 - customer.y;
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (distance < 2) {
+                        customer.state = 'waiting';
+                        customer.color = '#FFFF00';
+                        
+                        if (!gameState.currentOrder) {
+                            gameState.currentOrder = customer.order;
+                            showNotification(`Клиент заказал: ${customer.order === 'coffee' ? 'Кофе' : 'Чай'}`);
+                        }
+                    } else {
+                        customer.x += (dx/distance) * 2;
+                        customer.y += (dy/distance) * 2;
+                    }
+                }
+                else if (customer.state === 'eating') {
+                    customer.patienceTimer++;
+                    if (customer.patienceTimer > 300) {
+                        customer.state = 'leaving';
+                        customer.color = '#FFFFFF';
+                    }
+                }
+                else if (customer.state === 'leaving') {
+                    customer.x += 2;
+                    if (customer.x > 850) {
+                        gameState.customers.splice(index, 1);
+                        if (gameState.customers.length === 1) {
+                            spawnCustomer();
+                        }
+                    }
+                }
+                else if (customer.state === 'waiting') {
+                    customer.patienceTimer++;
+                    if (customer.patienceTimer > 1800) {
+                        customer.state = 'leaving';
+                        customer.color = '#FFFFFF';
+                        showNotification('😠 Клиент ушёл');
+                    }
+                }
+            });
+        }
+
+        function serveCustomer(tableId, drinkType) {
+            const customer = gameState.customers.find(c => c.table === tableId && c.state === 'waiting');
+            if (!customer || customer.order !== drinkType) return false;
+            
+            customer.state = 'eating';
+            customer.color = '#00FF00';
+            customer.patienceTimer = 0;
+            
+            const earned = gameState.prices[drinkType];
+            gameState.money += earned;
+            gameState.earnedThisDay += earned;
+            gameState.customersServed++;
+            gameState.inventory[drinkType]--;
+            
+            gameState.currentOrder = null;
+            
+            showNotification(`✅ Обслужен! +$${earned}`);
+            updateUI();
+            return true;
+        }
+
+        // ==================== ПЕРСОНАЖ ====================
+        function updatePlayer() {
+            const p = gameState.player;
+            if (p.targetX === null) return;
+            
+            const dx = p.targetX - p.x;
+            const dy = p.targetY - p.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            
+            if (dist < p.speed) {
+                p.x = p.targetX;
+                p.y = p.targetY;
+                p.targetX = null;
+                p.targetY = null;
+                p.isMoving = false;
+                p.color = '#000000';
+                
+                if (p.interactionTarget) {
+                    interactWithObject(p.interactionTarget);
+                    p.interactionTarget = null;
+                }
+            } else {
+                p.x += (dx/dist) * p.speed;
+                p.y += (dy/dist) * p.speed;
+                p.isMoving = true;
+                p.color = '#808080';
+            }
+        }
+
+        function movePlayerTo(x, y, obj = null) {
+            gameState.player.targetX = x;
+            gameState.player.targetY = y;
+            gameState.player.interactionTarget = obj;
+        }
+
+        // ==================== ВЗАИМОДЕЙСТВИЯ ====================
+        function interactWithObject(object) {
+            const p = gameState.player;
+            
+            if (object.type === 'door') {
+                gameState.location = gameState.location === 'bar' ? 'storage' : 'bar';
+                p.x = gameState.location === 'bar' ? 100 : 700;
+                p.y = 300;
+                showNotification(`Перешли в ${gameState.location === 'bar' ? 'бар' : 'склад'}`);
+            }
+            else if (object.type === 'stats') {
+                showStatistics();
+            }
+            else if (object.type === 'machine' && gameState.currentOrder) {
+                if (gameState.inventory[gameState.currentOrder] <= 0) {
+                    showNotification('❌ Нет ингредиентов!');
+                    return;
+                }
+                gameState.isPreparing = true;
+                gameState.preparationProgress = 0;
+                gameState.preparationTotal = gameState.currentOrder === 'coffee' ? 180 : 120;
+                p.color = '#FFFF00';
+                showNotification(`Готовим ${gameState.currentOrder === 'coffee' ? 'кофе' : 'чай'}...`);
+            }
+            else if (object.type === 'table') {
+                if (gameState.currentOrder) {
+                    if (serveCustomer(object.id, gameState.currentOrder)) {
+                        gameState.isPreparing = false;
+                    }
+                }
+            }
+            else if (object.type === 'shelf') {
+                const name = object.label;
+                const current = gameState.inventory[object.id.replace('_shelf', '')];
+                const max = gameState.storageCapacity[object.id.replace('_shelf', '')];
+                showNotification(`${name}: ${current}/${max}`);
+            }
+            else if (object.type === 'order') {
+                document.getElementById('order-menu').style.display = 'block';
+            }
+            else if (object.type === 'button' && object.id === 'end_day') {
+                endDay();
+            }
+        }
+
+        function showStatistics() {
+            showNotification(
+                `📊 СТАТИСТИКА ДНЯ:\n` +
+                `Заработано: $${gameState.earnedThisDay}\n` +
+                `Потрачено: $${gameState.spentThisDay}\n` +
+                `Чистая прибыль: $${gameState.earnedThisDay - gameState.spentThisDay}\n` +
+                `Обслужено: ${gameState.customersServed}/5`
+            );
+        }
+
+        function closeOrderMenu() {
+            document.getElementById('order-menu').style.display = 'none';
+        }
+
+        function orderIngredient(ingredient) {
+            const cost = gameState.costs[ingredient] * 10;
+            const max = gameState.storageCapacity[ingredient];
+            const current = gameState.inventory[ingredient];
+            
+            if (current >= max) {
+                showNotification(`❌ На складе достаточно ${ingredient}`);
+                return;
+            }
+            
+            if (gameState.money < cost) {
+                showNotification('❌ Недостаточно денег!');
+                return;
+            }
+            
+            gameState.inventory[ingredient] = Math.min(max, current + 10);
+            gameState.money -= cost;
+            gameState.spentThisDay += cost;
+            
+            showNotification(`✅ Заказано +10 ${ingredient} за $${cost}`);
+            updateUI();
+            closeOrderMenu();
+        }
+
+        // ==================== ИГРОВОЙ ЦИКЛ ====================
+        function updateGame() {
+            if (!gameState.dayActive) return;
+            
+            // Таймер обновляется отдельно — не здесь
+            // Только обновляем клиентов, игрока и интерфейс
+            updateCustomers();
+            updatePlayer();
+            
+            if (gameState.isPreparing) {
+                gameState.preparationProgress++;
+                if (gameState.preparationProgress >= gameState.preparationTotal) {
+                    gameState.isPreparing = false;
+                    showNotification(`✅ Готово!`);
+                }
+            }
+            
+            updateUI();
+        }
+
+        function drawGame() {
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            
+            const objects = gameState.objects[gameState.location];
+            objects.forEach(obj => {
+                ctx.fillStyle = obj.color;
+                ctx.fillRect(obj.x - obj.width/2, obj.y - obj.height/2, obj.width, obj.height);
+                
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(obj.label, obj.x, obj.y + obj.height/2 + 15);
+            });
+            
+            if (gameState.location === 'bar') {
+                gameState.customers.forEach(c => {
+                    ctx.fillStyle = c.color;
+                    ctx.beginPath();
+                    ctx.moveTo(c.x, c.y - c.size/2);
+                    ctx.lineTo(c.x - c.size/2, c.y + c.size/2);
+                    ctx.lineTo(c.x + c.size/2, c.y + c.size/2);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    if (c.state === 'waiting') {
+                        const color = c.order === 'coffee' ? '#8B4513' : '#4CAF50';
+                        ctx.fillStyle = color;
+                        ctx.beginPath();
+                        ctx.arc(c.x, c.y - 20, 8, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                });
+            }
+            
+            const p = gameState.player;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+            
+            if (gameState.currentOrder) {
+                const color = gameState.currentOrder === 'coffee' ? '#8B4513' : '#4CAF50';
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y - 25, 10, 0, Math.PI*2);
+                ctx.fill();
+            }
+            
+            if (gameState.isPreparing) {
+                const progress = gameState.preparationProgress / gameState.preparationTotal;
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(10, GAME_HEIGHT - 30, GAME_WIDTH - 20, 20);
+                ctx.fillStyle = '#1abc9c';
+                ctx.fillRect(10, GAME_HEIGHT - 30, (GAME_WIDTH - 20) * progress, 20);
+            }
+        }
+
+        canvas.addEventListener('click', e => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const objects = gameState.objects[gameState.location];
+            const clicked = objects.find(o => {
+                const left = o.x - o.width/2;
+                const right = o.x + o.width/2;
+                const top = o.y - o.height/2;
+                const bottom = o.y + o.height/2;
+                return x >= left && x <= right && y >= top && y <= bottom;
+            });
+            
+            if (clicked) {
+                movePlayerTo(clicked.x, clicked.y, clicked);
+            } else {
+                movePlayerTo(x, y);
+            }
+        });
+
+        // ==================== ЗАВЕРШЕНИЕ ДНЯ ====================
+        function endDay() {
+            gameState.dayActive = false;
+            document.getElementById('day-end-panel').style.display = 'block';
+            document.getElementById('served-count').textContent = gameState.customersServed;
+            document.getElementById('earned-money').textContent = `$${gameState.earnedThisDay}`;
+            document.getElementById('total-money').textContent = `$${gameState.money}`;
+            showNotification(`📊 День ${gameState.day} завершен!`);
+        }
+
+        function startNewDay() {
+            gameState.day++;
+            gameState.customersToday = 0;
+            gameState.customersServed = 0;
+            gameState.dayTime = 180;
+            gameState.dayActive = true;
+            gameState.earnedThisDay = 0;
+            gameState.spentThisDay = 0;
+            gameState.customers = [];
+            gameState.nextCustomerTime = Date.now() + 5000;
+            
+            document.getElementById('day-end-panel').style.display = 'none';
+            showNotification(`🎮 День ${gameState.day} начат!`);
+        }
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        function init() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand();
+            }
+            
+            function gameLoop() {
+                updateGame();
+                drawGame();
+                requestAnimationFrame(gameLoop);
+            }
+            
+            gameLoop();
+
+            // ✅ Обновляем таймер один раз в секунду
+            setInterval(() => {
+                if (gameState.dayActive && gameState.dayTime > 0) {
+                    gameState.dayTime--;
+                }
+            }, 1000);
+
+            setTimeout(() => {
+                if (gameState.dayActive) {
+                    gameState.nextCustomerTime = Date.now();
+                }
+            }, 5000);
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кофейный симулятор</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        
+        body {
+            background: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            background: #34495e;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        #game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            background: rgba(44, 62, 80, 0.95);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            z-index: 100;
+            border-bottom: 2px solid #1abc9c;
+        }
+        
+        .ui-section {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .ui-title {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .ui-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1abc9c;
+        }
+        
+        #game-canvas {
+            display: block;
+            background: #2c3e50;
+            cursor: pointer;
+        }
+        
+        #location-title {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1abc9c;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        #day-end-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(44, 62, 80, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            z-index: 200;
+            display: none;
+            border: 3px solid #1abc9c;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .panel-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #1abc9c;
+        }
+        
+        .panel-stats {
+            margin: 15px 0;
+            font-size: 18px;
+        }
+        
+        .panel-button {
+            background: #1abc9c;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .panel-button:hover {
+            transform: scale(1.05);
+            background: #16a085;
+        }
+        
+        .highlight {
+            color: #f1c40f;
+            font-weight: bold;
+        }
+        
+        /* Меню заказов */
+        #order-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(44, 62, 80, 0.98);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            z-index: 150;
+            display: none;
+            border: 2px solid #3498db;
+            max-width: 300px;
+        }
+        
+        .order-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #2c3e50;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .order-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            float: right;
+        }
+        
+        .order-button:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+        }
+        
+        #order-menu .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #e74c3c;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-ui">
+            <div class="ui-section">
+                <div class="ui-title">БАЛАНС</div>
+                <div class="ui-value" id="money">$100</div>
+            </div>
+            <div class="ui-section">
+                <div class="ui-title">ДЕНЬ</div>
+                <div class="ui-value" id="day">1</div>
+            </div>
+            <div class="ui-section">
+                <div class="ui-title">КЛИЕНТЫ</div>
+                <div class="ui-value" id="customers">0/5</div>
+            </div>
+            <div class="ui-section">
+                <div class="ui-title">ВРЕМЯ ДНЯ</div>
+                <div class="ui-value" id="day-time">3:00</div>
+            </div>
+        </div>
+        
+        <div id="location-title">БАРНАЯ ЗОНА</div>
+        
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+        
+        <div id="instructions">
+            🎮 Кликните, чтобы переместить персонажа<br>
+            🟨 Кликните на объект для взаимодействия
+        </div>
+        
+        <div id="day-end-panel">
+            <div class="panel-title">🎉 СМЕНА ЗАВЕРШЕНА!</div>
+            <div class="panel-stats">Вы обслужили <span class="highlight" id="served-count">0</span> клиентов</div>
+            <div class="panel-stats">Заработано: <span class="highlight" id="earned-money">$0</span></div>
+            <div class="panel-stats">Общий баланс: <span class="highlight" id="total-money">$100</span></div>
+            <button class="panel-button" onclick="startNewDay()">Начать новый день</button>
+        </div>
+        
+        <div id="order-menu">
+            <div class="close" onclick="closeOrderMenu()">✕</div>
+            <h3>📦 Заказать ингредиенты</h3>
+            <div class="order-item">
+                Кофе (+10) за $200
+                <button class="order-button" onclick="orderIngredient('coffee')">Заказать</button>
+            </div>
+            <div class="order-item">
+                Чай (+10) за $150
+                <button class="order-button" onclick="orderIngredient('tea')">Заказать</button>
+            </div>
+            <div class="order-item">
+                Молоко (+10) за $300
+                <button class="order-button" onclick="orderIngredient('milk')">Заказать</button>
+            </div>
+            <div class="order-item">
+                Сироп (+10) за $250
+                <button class="order-button" onclick="orderIngredient('syrup')">Заказать</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /// <reference lib="dom" />
+
+        // ==================== КОНСТАНТЫ И ПЕРЕМЕННЫЕ ====================
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const GAME_WIDTH = 800;
+        const GAME_HEIGHT = 600;
+        
+        let gameState = {
+            location: 'bar',
+            money: 100,
+            day: 1,
+            customersToday: 0,
+            customersServed: 0,
             dayTime: 180,
             dayActive: true,
             earnedThisDay: 0,
@@ -580,8 +1310,7 @@
             
             gameState.dayTime--;
             if (gameState.dayTime <= 0) {
-                gameState.dayTime = 0;
-                endDay();
+                gameState.dayTime--;
             }
             
             if (Date.now() > gameState.nextCustomerTime) {
@@ -730,4 +1459,3 @@
     </script>
 </body>
 </html>
-
