@@ -24,6 +24,22 @@
             font-size: 14px;
             z-index: 100;
         }
+        #pause-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: 1px solid #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 100;
+        }
+        #pause-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
         #popup {
             position: absolute;
             bottom: 20px;
@@ -64,6 +80,36 @@
         .reject:hover {
             background: #b91c1c;
         }
+        #pause-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(2, 6, 23, 0.95);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 300;
+            display: none;
+            border: 1px solid #1e40af;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+        }
+        #resume-btn {
+            background: #1d4ed8;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        #resume-btn:hover {
+            background: #1e40af;
+        }
     </style>
 </head>
 <body>
@@ -72,10 +118,17 @@
         Ошибки: <span id="mistakes">0</span>
     </div>
 
+    <button id="pause-btn">⏸️ Пауза</button>
+
     <div id="popup">
         <div id="docInfo"></div>
         <button class="btn sign">Подписать</button>
         <button class="btn reject">Отклонить</button>
+    </div>
+
+    <div id="pause-modal">
+        Игра на паузе
+        <button id="resume-btn">▶️ Продолжить</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -87,6 +140,9 @@
         const ctx = canvas.getContext("2d");
         const popup = document.getElementById("popup");
         const info = document.getElementById("docInfo");
+        const pauseBtn = document.getElementById("pause-btn");
+        const pauseModal = document.getElementById("pause-modal");
+        const resumeBtn = document.getElementById("resume-btn");
 
         resize();
         window.addEventListener("resize", resize);
@@ -96,13 +152,12 @@
         let score = 0;
         let mistakes = 0;
         let selectedDoc = null;
+        let isPaused = false;
 
-        // Ограничение: не более 15 документов одновременно
+        // Ограничение: не более 15 документов
         const MAX_DOCS = 15;
-
-        // Время последнего добавления документа
         let lastDocTime = 0;
-        const DOC_INTERVAL = 1200; // 1.2 секунды
+        const DOC_INTERVAL = 1200;
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -115,39 +170,43 @@
                 y: -40,
                 size: 30,
                 speed: 1 + Math.random() * 1.5,
-                valid: Math.random() > 0.4, // 60% корректных
+                valid: Math.random() > 0.4,
                 type: ["УПД", "СФ", "Акт", "Счёт"][Math.floor(Math.random() * 4)]
             };
         }
 
         function update(currentTime) {
-            // Очистка экрана
+            // Если на паузе — не обновляем
+            if (isPaused) {
+                requestAnimationFrame(update);
+                return;
+            }
+
+            // Очистка
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Добавление нового документа раз в DOC_INTERVAL
+            // Спавн новых документов
             if (currentTime - lastDocTime > DOC_INTERVAL && docs.length < MAX_DOCS) {
                 docs.push(randomDoc());
                 lastDocTime = currentTime;
             }
 
-            // Обновление и отрисовка документов
+            // Движение и отрисовка
             for (let d of docs) {
                 d.y += d.speed;
 
-                // Цвет: зелёный — корректный, красный — с ошибками
                 ctx.fillStyle = d.valid ? "#22c55e" : "#ef4444";
                 ctx.beginPath();
                 ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Тип документа
                 ctx.fillStyle = "white";
                 ctx.font = "12px Arial";
                 ctx.textAlign = "center";
                 ctx.fillText(d.type, d.x, d.y + 4);
             }
 
-            // Удаление упавших документов
+            // Удаление упавших
             docs = docs.filter(d => {
                 if (d.y > canvas.height + 50) {
                     mistakes++;
@@ -156,7 +215,7 @@
                 return true;
             });
 
-            // Обновление интерфейса
+            // UI
             document.getElementById("score").textContent = score;
             document.getElementById("mistakes").textContent = mistakes;
 
@@ -167,8 +226,10 @@
         // Запуск игры
         requestAnimationFrame(update);
 
-        // Обработка клика по canvas
+        // Клик по canvas — открыть документ
         canvas.addEventListener("click", e => {
+            if (isPaused) return;
+
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -182,7 +243,6 @@
             }
         });
 
-        // Открытие документа
         function openDoc(doc) {
             selectedDoc = doc;
             popup.style.display = "block";
@@ -193,9 +253,8 @@
             `;
         }
 
-        // Подписать
         document.querySelector(".sign").onclick = () => {
-            if (!selectedDoc) return;
+            if (!selectedDoc || isPaused) return;
             if (selectedDoc.valid) {
                 score += 10;
             } else {
@@ -205,9 +264,8 @@
             closeDoc();
         };
 
-        // Отклонить
         document.querySelector(".reject").onclick = () => {
-            if (!selectedDoc) return;
+            if (!selectedDoc || isPaused) return;
             if (!selectedDoc.valid) {
                 score += 5;
             } else {
@@ -217,7 +275,6 @@
             closeDoc();
         };
 
-        // Закрыть документ
         function closeDoc() {
             docs = docs.filter(d => d !== selectedDoc);
             selectedDoc = null;
@@ -229,6 +286,17 @@
             if (e.target === popup) {
                 closeDoc();
             }
+        });
+
+        // Пауза/продолжение
+        pauseBtn.addEventListener("click", () => {
+            isPaused = true;
+            pauseModal.style.display = "block";
+        });
+
+        resumeBtn.addEventListener("click", () => {
+            isPaused = false;
+            pauseModal.style.display = "none";
         });
     </script>
 </body>
