@@ -575,23 +575,27 @@
 
         // ==================== ИГРОВОЙ ЦИКЛ ====================
         function updateGame() {
-            if (!gameState.dayActive) return;
-            
-            // Таймер обновляется отдельно — не здесь
-            // Только обновляем клиентов, игрока и интерфейс
-            updateCustomers();
-            updatePlayer();
-            
-            if (gameState.isPreparing) {
-                gameState.preparationProgress++;
-                if (gameState.preparationProgress >= gameState.preparationTotal) {
-                    gameState.isPreparing = false;
-                    showNotification(`✅ Готово!`);
-                }
-            }
-            
-            updateUI();
+        if (!gameState.dayActive) return;
+    
+        // Проверяем, можно ли появить нового клиента
+        if (Date.now() > gameState.nextCustomerTime) {
+        spawnCustomer();
         }
+    
+        updateCustomers();
+        updatePlayer();
+    
+    if (gameState.isPreparing) {
+        gameState.preparationProgress++;
+        if (gameState.preparationProgress >= gameState.preparationTotal) {
+            gameState.isPreparing = false;
+            showNotification(`✅ Готово!`);
+        }
+    }
+    
+    updateUI();
+}
+
 
         function drawGame() {
             ctx.fillStyle = '#2c3e50';
