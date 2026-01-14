@@ -21,7 +21,7 @@
             background: rgba(0,0,0,0.6);
             padding: 10px 14px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 12px;
             z-index: 100;
         }
         #pause-btn {
@@ -52,51 +52,29 @@
             width: 300px;
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
             z-index: 200;
+            border: 1px solid #333;
         }
         #docInfo {
-            margin-bottom: 12px;
-            line-height: 1.5;
+            margin-bottom: 10px;
+            line-height: 1.6;
         }
         .btn {
             padding: 10px;
-            margin-top: 8px;
+            margin-top: 6px;
             width: 100%;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             color: white;
         }
-        .sign {
-            background: #16a34a;
-        }
-        .sign:hover {
-            background: #15803d;
-        }
-        .reject {
-            background: #dc2626;
-        }
-        .reject:hover {
-            background: #b91c1c;
-        }
-        #pause-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(2, 6, 23, 0.95);
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-            z-index: 300;
-            display: none;
-            border: 1px solid #1e40af;
-            box-shadow: 0 0 30px rgba(0,0,0,0.6);
-        }
+        .sign { background: #16a34a; }
+        .sign:hover { background: #15803d; }
+        .reject { background: #dc2626; }
+        .reject:hover { background: #b91c1c; }
+        .waiting { background: #f59e0b; }
+        .waiting:hover { background: #d97706; }
         #resume-btn {
             background: #1d4ed8;
             color: white;
@@ -105,11 +83,55 @@
             font-size: 18px;
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 15px;
         }
-        #resume-btn:hover {
-            background: #1e40af;
+        #pause-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(2, 6, 23, 0.98);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            z-index: 300;
+            display: none;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
         }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1d4ed8;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 6px;
+            z-index: 1000;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            transition: opacity 0.3s;
+        }
+        #stats-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(2, 6, 23, 0.98);
+            padding: 30px;
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+            z-index: 400;
+            display: none;
+            max-width: 400px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+            border: 1px solid #1e40af;
+        }
+        .stat-item {
+            font-size: 16px;
+            margin: 8px 0;
+        }
+        .highlight { color: #10b981; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -124,11 +146,21 @@
         <div id="docInfo"></div>
         <button class="btn sign">Подписать</button>
         <button class="btn reject">Отклонить</button>
+        <button class="btn waiting">На исправление</button>
     </div>
 
     <div id="pause-modal">
         Игра на паузе
         <button id="resume-btn">▶️ Продолжить</button>
+    </div>
+
+    <div id="stats-panel">
+        <h3>📊 Итоги дня</h3>
+        <div class="stat-item">Обработано: <span class="highlight" id="total-processed">0</span></div>
+        <div class="stat-item">Среднее время: <span class="highlight" id="avg-time">0</span> сек</div>
+        <div class="stat-item">Ошибок: <span class="highlight" id="total-errors">0</span></div>
+        <div class="stat-item">Потеряно: <span class="highlight" id="lost-docs">0</span></div>
+        <button class="btn" onclick="resetGame()">Начать заново</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -143,13 +175,14 @@
         const pauseBtn = document.getElementById("pause-btn");
         const pauseModal = document.getElementById("pause-modal");
         const resumeBtn = document.getElementById("resume-btn");
-
-        resize();
-        window.addEventListener("resize", resize);
+        const statsPanel = document.getElementById("stats-panel");
 
         // Загружаем текстуру документа
         const docTexture = new Image();
         docTexture.src = 'https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png';
+
+        resize();
+        window.addEventListener("resize", resize);
 
         // Игровые переменные
         let docs = [];
@@ -158,10 +191,19 @@
         let selectedDoc = null;
         let isPaused = false;
 
-        // Ограничение: не более 15 документов
-        const MAX_DOCS = 15;
+        const MAX_DOCS = 5;
         let lastDocTime = 0;
-        const DOC_INTERVAL = 1200;
+        const DOC_INTERVAL = 1800;
+
+        // Статистика
+        const stats = {
+            totalProcessed: 0,
+            errors: 0,
+            processingTimes: [],
+            lostDocs: 0,
+            signedDocs: 0,
+            rejectedDocs: 0
+        };
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -169,138 +211,222 @@
         }
 
         function randomDoc() {
+            const types = ["УПД", "СФ", "Акт", "Счёт"];
+            const type = types[Math.floor(Math.random() * types.length)];
+
+            const contractors = [
+                { name: "ООО Ромашка", errorRate: 0.5, urgent: false, burst: false },
+                { name: "ИП Иванов", errorRate: 0.3, urgent: true, burst: false },
+                { name: "АО Корпорация", errorRate: 0.4, urgent: false, burst: true },
+                { name: "Новый партнёр", errorRate: 0.7, urgent: false, burst: false }
+            ];
+            const contractor = contractors[Math.floor(Math.random() * contractors.length)];
+
             return {
                 x: Math.random() * (canvas.width - 60) + 30,
                 y: -40,
                 size: 30,
-                speed: 1 + Math.random() * 1.5,
-                valid: Math.random() > 0.4,
-                type: ["УПД", "СФ", "Акт", "Счёт"][Math.floor(Math.random() * 4)]
+                speed: 0.8 + Math.random() * 0.6,
+                type: type,
+                contractor: contractor,
+                valid: Math.random() > contractor.errorRate,
+                status: "incoming",
+                ttl: contractor.urgent ? 8000 : 12000,
+                startTime: Date.now(),
+                waitingReturn: false
             };
         }
 
         function update(currentTime) {
-            // Если на паузе — не обновляем
             if (isPaused) {
                 requestAnimationFrame(update);
                 return;
             }
 
-            // Очистка
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Спавн новых документов
+            // Спавн
             if (currentTime - lastDocTime > DOC_INTERVAL && docs.length < MAX_DOCS) {
                 docs.push(randomDoc());
                 lastDocTime = currentTime;
+            } else if (docs.length >= MAX_DOCS && currentTime - lastDocTime > DOC_INTERVAL) {
+                stats.lostDocs++;
+                mistakes += 2;
+                showNotification("❌ Документ потерян — очередь переполнена!");
+                lastDocTime = currentTime;
             }
 
-            // Движение и отрисовка
             for (let d of docs) {
-                d.y += d.speed;
+                if (d.status === "incoming") {
+                    d.y += d.speed;
+                } else if (d.status === "signed") {
+                    d.y -= 2;
+                } else if (d.status === "rejected") {
+                    d.y += 4;
+                }
 
-                // Сохраняем состояние canvas
+                // Ограничение по низу
+                if (d.y > canvas.height - 50 && d.status === "incoming") {
+                    d.y = canvas.height - 50;
+                }
+
                 ctx.save();
 
-                // Рисуем круг и ограничиваем область
+                // Цвет обводки
+                let strokeColor;
+                switch (d.status) {
+                    case "incoming": strokeColor = "#3b82f6"; break;
+                    case "signed":   strokeColor = "#10b981"; break;
+                    case "rejected": strokeColor = "#ef4444"; break;
+                    case "waiting":  strokeColor = "#f59e0b"; break;
+                    default:         strokeColor = "#6b7280";
+                }
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 3;
+
+                // Таймер
+                const elapsed = Date.now() - d.startTime;
+                const progress = Math.min(elapsed / d.ttl, 1);
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.size + 5, -Math.PI / 2, Math.PI * 2 * (1 - progress) - Math.PI / 2);
+                ctx.stroke();
+
+                // Просрочка
+                if (elapsed > d.ttl && d.status === "incoming") {
+                    d.status = "overdue";
+                    mistakes += 2;
+                    showNotification("⚠️ Документ просрочен!");
+                }
+
+                if (d.status === "overdue") {
+                    if (Math.floor(Date.now() / 200) % 2 === 0) {
+                        ctx.strokeStyle = "#ef4444";
+                        ctx.lineWidth = 4;
+                    }
+                }
+
+                // Отрисовка текстуры
                 ctx.beginPath();
                 ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
                 ctx.clip();
 
-                // Если текстура загружена — рисуем её
                 if (docTexture.complete) {
                     ctx.drawImage(docTexture, d.x - d.size, d.y - d.size, d.size * 2, d.size * 2);
                 } else {
-                    // Fallback: цветной круг
                     ctx.fillStyle = d.valid ? "#22c55e" : "#ef4444";
                     ctx.fill();
                 }
 
-                // Восстанавливаем и рисуем обводку
                 ctx.restore();
                 ctx.save();
-
-                ctx.strokeStyle = d.valid ? "#16a34a" : "#dc2626";
-                ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // Тип документа
-                ctx.fillStyle = "black";
+                // Тип с цветом
+                const typeColors = { "УПД": "#fbbf24", "СФ": "#3b82f6", "Акт": "#10b981", "Счёт": "#f97316" };
+                ctx.fillStyle = typeColors[d.type] || "white";
                 ctx.font = "12px Arial";
                 ctx.textAlign = "center";
                 ctx.fillText(d.type, d.x, d.y + 4);
+
+                // Иконки
+                if (d.contractor.urgent) {
+                    ctx.fillStyle = "#f59e0b";
+                    ctx.font = "bold 14px Arial";
+                    ctx.fillText("⏱", d.x + d.size - 8, d.y - d.size + 5);
+                }
+                if (d.contractor.name === "Новый партнёр") {
+                    ctx.fillStyle = "#ef4444";
+                    ctx.fillText("❗", d.x + d.size - 8, d.y - d.size + 20);
+                }
             }
 
-            // Удаление упавших
+            // Удаление
             docs = docs.filter(d => {
-                if (d.y > canvas.height + 50) {
-                    mistakes++;
-                    return false;
-                }
+                if (d.y < -50 && d.status === "signed") return false;
+                if (d.y > canvas.height + 50 && d.status === "rejected") return false;
                 return true;
             });
 
-            // UI
             document.getElementById("score").textContent = score;
             document.getElementById("mistakes").textContent = mistakes;
-
-            // Следующий кадр
             requestAnimationFrame(update);
         }
-
-        // Запуск игры
-        requestAnimationFrame(update);
-
-        // Клик по canvas — открыть документ
-        canvas.addEventListener("click", e => {
-            if (isPaused) return;
-
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            for (let d of docs) {
-                const dist = Math.hypot(x - d.x, y - d.y);
-                if (dist < d.size) {
-                    openDoc(d);
-                    break;
-                }
-            }
-        });
 
         function openDoc(doc) {
             selectedDoc = doc;
             popup.style.display = "block";
+            const timeLeft = Math.max(0, Math.floor((doc.ttl - (Date.now() - doc.startTime)) / 1000));
             info.innerHTML = `
                 <b>${doc.type}</b><br>
-                Контрагент: ООО Ромашка<br>
-                Статус: ${doc.valid ? "Корректный" : "С ошибками"}
+                Контрагент: ${doc.contractor.name}<br>
+                Статус: ${getStatusText(doc.status)}<br>
+                <small>Осталось: ${timeLeft} сек</small>
             `;
+        }
+
+        function getStatusText(status) {
+            return {
+                incoming: "Входящий",
+                signed: "Подписан",
+                rejected: "Отклонён",
+                waiting: "На исправлении",
+                overdue: "Просрочен"
+            }[status] || status;
         }
 
         document.querySelector(".sign").onclick = () => {
             if (!selectedDoc || isPaused) return;
+
+            const isInvoice = selectedDoc.type === "Счёт";
+            if (isInvoice) {
+                showNotification("🚫 Счёт нельзя подписывать!");
+                mistakes += 3;
+                stats.errors++;
+                return;
+            }
+
             if (selectedDoc.valid) {
                 score += 10;
+                selectedDoc.status = "signed";
             } else {
                 score -= 15;
-                mistakes++;
+                selectedDoc.status = "rejected";
+                mistakes += 2;
+                stats.errors++;
             }
-            closeDoc();
+            finalizeDoc();
         };
 
         document.querySelector(".reject").onclick = () => {
             if (!selectedDoc || isPaused) return;
-            if (!selectedDoc.valid) {
-                score += 5;
-            } else {
-                score -= 10;
-                mistakes++;
-            }
-            closeDoc();
+            score += 5;
+            selectedDoc.status = "rejected";
+            finalizeDoc();
         };
+
+        document.querySelector(".waiting").onclick = () => {
+            if (!selectedDoc || isPaused) return;
+            selectedDoc.status = "waiting";
+            selectedDoc.y = canvas.height - 100;
+            showNotification("📝 На исправлении");
+            setTimeout(() => {
+                selectedDoc.status = "incoming";
+                selectedDoc.startTime = Date.now();
+                selectedDoc.valid = Math.random() > 0.3;
+            }, 3000);
+            finalizeDoc();
+        };
+
+        function finalizeDoc() {
+            const time = Date.now() - selectedDoc.startTime;
+            stats.processingTimes.push(time);
+            stats.totalProcessed++;
+            if (selectedDoc.status === "signed") stats.signedDocs++;
+            if (selectedDoc.status === "rejected") stats.rejectedDocs++;
+            closeDoc();
+        }
 
         function closeDoc() {
             docs = docs.filter(d => d !== selectedDoc);
@@ -308,14 +434,24 @@
             popup.style.display = "none";
         }
 
-        // Закрыть попап по клику вне
         window.addEventListener("click", (e) => {
-            if (e.target === popup) {
-                closeDoc();
+            if (e.target === popup) closeDoc();
+        });
+
+        canvas.addEventListener("click", e => {
+            if (isPaused) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            for (let d of docs) {
+                const dist = Math.hypot(x - d.x, y - d.y);
+                if (dist < d.size && d.status === "incoming") {
+                    openDoc(d);
+                    break;
+                }
             }
         });
 
-        // Пауза/продолжение
         pauseBtn.addEventListener("click", () => {
             isPaused = true;
             pauseModal.style.display = "block";
@@ -325,7 +461,52 @@
             isPaused = false;
             pauseModal.style.display = "none";
         });
+
+        function showNotification(text) {
+            const n = document.createElement('div');
+            n.className = 'notification';
+            n.textContent = text;
+            document.body.appendChild(n);
+            setTimeout(() => {
+                n.style.opacity = '0';
+                setTimeout(() => n.remove(), 300);
+            }, 2000);
+        }
+
+        function endGame() {
+            const avg = stats.processingTimes.length > 0
+                ? (stats.processingTimes.reduce((a,b) => a+b) / stats.processingTimes.length / 1000).toFixed(1)
+                : "0";
+
+            document.getElementById("total-processed").textContent = stats.totalProcessed;
+            document.getElementById("avg-time").textContent = avg;
+            document.getElementById("total-errors").textContent = stats.errors;
+            document.getElementById("lost-docs").textContent = stats.lostDocs;
+
+            statsPanel.style.display = "block";
+        }
+
+        function resetGame() {
+            statsPanel.style.display = "none";
+            docs = [];
+            score = 0;
+            mistakes = 0;
+            stats.totalProcessed = 0;
+            stats.errors = 0;
+            stats.processingTimes = [];
+            stats.lostDocs = 0;
+            stats.signedDocs = 0;
+            stats.rejectedDocs = 0;
+            lastDocTime = 0;
+            showNotification("🎮 Новый день начат!");
+        }
+
+        requestAnimationFrame(update);
+        setTimeout(() => {
+            if (confirm("🎯 Хотите сыграть в симулятор Диадока?")) {
+                showNotification("Добро пожаловать в офис!");
+            }
+        }, 500);
     </script>
 </body>
 </html>
-
