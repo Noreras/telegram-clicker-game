@@ -147,6 +147,10 @@
         resize();
         window.addEventListener("resize", resize);
 
+        // Загружаем текстуру документа
+        const docTexture = new Image();
+        docTexture.src = 'https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png';
+
         // Игровые переменные
         let docs = [];
         let score = 0;
@@ -195,11 +199,34 @@
             for (let d of docs) {
                 d.y += d.speed;
 
-                ctx.fillStyle = d.valid ? "#22c55e" : "#ef4444";
+                // Сохраняем состояние canvas
+                ctx.save();
+
+                // Рисуем круг и ограничиваем область
                 ctx.beginPath();
                 ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.clip();
 
+                // Если текстура загружена — рисуем её
+                if (docTexture.complete) {
+                    ctx.drawImage(docTexture, d.x - d.size, d.y - d.size, d.size * 2, d.size * 2);
+                } else {
+                    // Fallback: цветной круг
+                    ctx.fillStyle = d.valid ? "#22c55e" : "#ef4444";
+                    ctx.fill();
+                }
+
+                // Восстанавливаем и рисуем обводку
+                ctx.restore();
+                ctx.save();
+
+                ctx.strokeStyle = d.valid ? "#16a34a" : "#dc2626";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Тип документа
                 ctx.fillStyle = "white";
                 ctx.font = "12px Arial";
                 ctx.textAlign = "center";
