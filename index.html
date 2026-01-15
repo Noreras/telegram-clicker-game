@@ -104,7 +104,7 @@
             text-align: center;
         }
 
-        /* === РАБОЧАЯ ОБЛАСТЬ (адаптивная ширина) === */
+        /* === РАБОЧАЯ ОБЛАСТЬ === */
         #content {
             flex: 1;
             padding: 20px;
@@ -115,6 +115,29 @@
 
         #sidebar.minimized ~ #content {
             flex: calc(100vw - 80px);
+        }
+
+        /* === СЧЁТЧИК В ЛЕВОМ НИЖНЕМ УГЛУ === */
+        #stats-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 260px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            z-index: 100;
+            white-space: nowrap;
+        }
+
+        #sidebar.minimized ~ #stats-panel {
+            left: 100px;
+        }
+
+        #stats-panel .value {
+            font-weight: bold;
+            color: #00BEA2;
         }
 
         /* === ОТСТУП ДЛЯ ПЛАВНОГО ПЕРЕХОДА === */
@@ -156,7 +179,13 @@
             border-color: #90caf9;
         }
 
-        .doc-item img {
+        .doc-icon-open {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .doc-item img[type="type"] {
             width: 24px;
             height: 24px;
             margin-right: 10px;
@@ -258,8 +287,8 @@
             <span>Документы</span>
         </div>
 
+        <!-- Входящие БЕЗ иконки -->
         <div class="menu-item submenu-item active" onclick="openTab('incoming')">
-            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png" alt="Входящие">
             <span>Входящие <span id="counter" class="counter">0</span></span>
         </div>
 
@@ -277,6 +306,12 @@
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/set.png" alt="Настройки">
             <span>Настройки</span>
         </div>
+    </div>
+
+    <!-- СЧЁТЧИК В НИЖНЕМ ЛЕВОМ УГЛУ -->
+    <div id="stats-panel">
+        Очки: <span class="value" id="score">0</span> | 
+        Ошибки: <span class="value" id="mistakes">0</span>
     </div>
 
     <!-- РАБОЧАЯ ОБЛАСТЬ -->
@@ -332,13 +367,16 @@
         let isPaused = false;
         let gameInterval;
 
-        // === Иконки типов документов ===
+        // === Иконки типов документов и "открыть" ===
         const typeIcons = {
             "УПД": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/upd.png",
             "СФ": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sf.png",
             "Акт": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/akt.png",
             "Счёт": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sch.png"
         };
+
+        // Иконка "открыть" слева от типа документа
+        const openIcon = "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/open.png";
 
         const contractors = [
             { name: "ООО Ромашка", errorRate: 0.5 },
@@ -379,23 +417,26 @@
             renderIncoming();
         }
 
-        // === Обновить счётчик ===
+        // === Обновить счётчик входящих ===
         function updateCounter() {
             const count = incomingDocuments.length;
             document.getElementById('counter').textContent = count;
         }
 
+        // === Обновить счётчик очков и ошибок ===
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('mistakes').textContent = mistakes;
+        }
+
         // === Открыть вкладку ===
         function openTab(tabId) {
-            // Сброс активных классов
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
 
-            // Открываем нужную вкладку
             const tab = document.getElementById(tabId);
             if (tab) tab.classList.add('active');
 
-            // Активируем пункт меню
             if (tabId === 'incoming') {
                 document.querySelector('.submenu-item').classList.add('active');
                 document.getElementById('sidebar').classList.add('minimized');
@@ -404,7 +445,6 @@
                 document.querySelector(`[onclick="openTab('${tabId}')"]`)?.classList.add('active');
             }
 
-            // Пауза
             isPaused = tabId !== 'incoming';
         }
 
@@ -421,6 +461,7 @@
                     removeDocument(doc.id);
                     showNotification('⚠️ Документ просрочен и удалён!');
                     mistakes += 2;
+                    updateStats();
                     return;
                 }
 
@@ -429,6 +470,7 @@
                 item.onclick = () => openDocumentModal(doc);
 
                 item.innerHTML = `
+                    <img src="${openIcon}" class="doc-icon-open" alt="Открыть">
                     <img src="${typeIcons[doc.type]}" alt="${doc.type}">
                     <div class="doc-type">${doc.type}</div>
                     <div class="doc-contractor">${doc.contractor}</div>
@@ -456,6 +498,7 @@
                     removeDocument(doc.id);
                     showNotification('⚠️ Документ просрочен и удалён!');
                     mistakes += 2;
+                    updateStats();
                 }
             };
 
@@ -476,6 +519,7 @@
                 }
                 closeDocumentModal();
                 removeDocument(doc.id);
+                updateStats();
             };
 
             document.getElementById('btn-reject').onclick = () => {
@@ -483,6 +527,7 @@
                 showNotification('🗑 Отклонён');
                 closeDocumentModal();
                 removeDocument(doc.id);
+                updateStats();
             };
 
             document.getElementById('btn-waiting').onclick = () => {
@@ -520,8 +565,9 @@
 
         // === Старт ===
         window.onload = () => {
+            updateStats(); // Инициализация счётчика
             startGame();
-            setInterval(renderIncoming, 1000);
+            setInterval(renderIncoming, 1000); // Обновление таймеров
         };
     </script>
 </body>
