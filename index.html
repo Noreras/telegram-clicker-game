@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>Контур Диадок</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Montserrat', sans-serif;
         }
         body {
             height: 100vh;
@@ -39,13 +42,14 @@
         }
 
         #sidebar-header {
+            font-size: 18px;
+            font-weight: 600;
+            color: #00BEA2;
             text-align: center;
+            padding: 10px;
             margin-bottom: 20px;
-        }
-
-        #sidebar-header img {
-            height: 28px;
-            width: auto;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .menu-item {
@@ -103,7 +107,7 @@
             text-align: center;
         }
 
-        /* === РАБОЧАЯ ОБЛАСТЬ === */
+        /* === РАБОЧАЯ ОБЛАСТЬ (адаптивная ширина) === */
         #content {
             flex: 1;
             padding: 20px;
@@ -114,29 +118,6 @@
 
         #sidebar.minimized ~ #content {
             flex: calc(100vw - 80px);
-        }
-
-        /* === СЧЁТЧИК В ЛЕВОМ НИЖНЕМ УГЛУ === */
-        #stats-panel {
-            position: absolute;
-            bottom: 20px;
-            left: 260px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            z-index: 100;
-            white-space: nowrap;
-        }
-
-        #sidebar.minimized ~ #stats-panel {
-            left: 100px;
-        }
-
-        #stats-panel .value {
-            font-weight: bold;
-            color: #00BEA2;
         }
 
         /* === ОТСТУП ДЛЯ ПЛАВНОГО ПЕРЕХОДА === */
@@ -178,9 +159,9 @@
             border-color: #90caf9;
         }
 
-        .doc-icon-open {
-            width: 20px;
-            height: 20px;
+        .doc-item img {
+            width: 24px;
+            height: 24px;
             margin-right: 10px;
         }
 
@@ -206,6 +187,101 @@
             font-weight: 500;
         }
 
+        .doc-item.urgent {
+            border-color: #d32f2f;
+            background: #ffebee;
+            animation: pulse 2s infinite;
+        }
+
+        .doc-item.warning {
+            border-color: #f57c00;
+            background: #fff3e0;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .doc-item {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .timer-progress {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .timer-progress-bar {
+            height: 100%;
+            background: #00BEA2;
+            transition: width 1s linear, background-color 0.3s;
+        }
+
+        .timer-progress-bar.warning {
+            background: #f57c00;
+        }
+
+        .timer-progress-bar.urgent {
+            background: #d32f2f;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 20px;
+            font-size: 16px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: #f5f5f5;
+        }
+
+        .stat-item.score {
+            color: #00BEA2;
+            font-weight: 600;
+        }
+
+        .stat-item.mistakes {
+            color: #d32f2f;
+            font-weight: 600;
+        }
+
+        .stat-item.best {
+            color: #1976d2;
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
         /* === МОДАЛЬНОЕ ОКНО === */
         .modal {
             position: fixed;
@@ -226,6 +302,18 @@
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .modal-title {
@@ -263,14 +351,355 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+
+        /* === КОНТРАГЕНТЫ === */
+        .contractor-card {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .contractor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .contractor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .contractor-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .trust-level {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .trust-level.novice { background: #e3f2fd; color: #1976d2; }
+        .trust-level.partner { background: #e8f5e9; color: #388e3c; }
+        .trust-level.trusted { background: #fff3e0; color: #f57c00; }
+
+        .trust-progress {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .trust-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00BEA2, #00d4b8);
+            transition: width 0.3s;
+        }
+
+        .contractor-bonus {
+            margin-top: 12px;
+            padding: 8px;
+            background: #e8f5e9;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #2e7d32;
+        }
+
+        /* === СООБЩЕНИЯ === */
+        .message-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .message-item {
+            background: #f9f9f9;
+            border-left: 4px solid #00BEA2;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .message-item:hover {
+            background: #f0f0f0;
+        }
+
+        .message-item.unread {
+            background: #e3f2fd;
+            border-left-color: #1976d2;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .message-content {
+            color: #555;
+            font-size: 14px;
+        }
+
+        .message-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+
+        .message-type.thanks { background: #e8f5e9; color: #2e7d32; }
+        .message-type.complaint { background: #ffebee; color: #c62828; }
+        .message-type.task { background: #fff3e0; color: #f57c00; }
+
+        /* === НОВЫЙ ДОКУМЕНТ === */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #00BEA2;
+        }
+
+        .doc-preview {
+            background: #f5f5f5;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        /* === АРХИВ ДОКУМЕНТОВ === */
+        .archive-filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .filter-btn.active {
+            background: #00BEA2;
+            color: white;
+            border-color: #00BEA2;
+        }
+
+        .archive-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .archive-table th,
+        .archive-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .archive-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+
+        .stat-card {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #00BEA2;
+        }
+
+        /* === НАСТРОЙКИ === */
+        .settings-section {
+            margin-bottom: 32px;
+        }
+
+        .settings-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #00BEA2;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* === УРОВНИ И ДОСТИЖЕНИЯ === */
+        .level-progress {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .level-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .achievement-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .achievement-item.unlocked {
+            background: #e8f5e9;
+        }
+
+        .achievement-icon {
+            font-size: 32px;
+            margin-right: 12px;
+        }
+
+        .achievement-locked {
+            opacity: 0.5;
+        }
+
+        /* === УЛУЧШЕНИЯ === */
+        .upgrade-card {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upgrade-card:hover {
+            border-color: #00BEA2;
+            transform: translateY(-2px);
+        }
+
+        .upgrade-card.purchased {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .upgrade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .upgrade-price {
+            color: #00BEA2;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
     <!-- ЛЕВАЯ ПАНЕЛЬ -->
     <div id="sidebar">
-        <div id="sidebar-header">
-            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/logo.png" alt="Контур Диадок">
-        </div>
+        <div id="sidebar-header">Контур Диадок</div>
 
         <div class="menu-item" onclick="openTab('new_doc')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/new_doc.png" alt="Новый">
@@ -282,8 +711,8 @@
             <span>Документы</span>
         </div>
 
-        <!-- Входящие БЕЗ иконки -->
         <div class="menu-item submenu-item active" onclick="openTab('incoming')">
+            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png" alt="Входящие">
             <span>Входящие <span id="counter" class="counter">0</span></span>
         </div>
 
@@ -303,37 +732,207 @@
         </div>
     </div>
 
-    <!-- СЧЁТЧИК В НИЖНЕМ ЛЕВОМ УГЛУ -->
-    <div id="stats-panel">
-        Очки: <span class="value" id="score">0</span> | 
-        Ошибки: <span class="value" id="mistakes">0</span>
-    </div>
-
     <!-- РАБОЧАЯ ОБЛАСТЬ -->
     <div id="content">
         <!-- Вкладка: Входящие -->
         <div id="incoming" class="tab-content active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
             <h2>Входящие документы</h2>
-            <div class="doc-list" id="doc-list"></div>
+                <div class="stats-container">
+                    <div class="level-progress" style="padding: 8px 16px; margin: 0;">
+                        <div class="level-info">
+                            <span id="level-display">Уровень 1</span>
+                            <span style="font-size: 12px; color: #999;"><span id="level-exp">0</span>/<span id="level-exp-max">100</span> опыта</span>
+                        </div>
+                        <div class="trust-progress">
+                            <div class="trust-progress-bar" id="level-progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-item score">
+                        <span>💎</span>
+                        <span>Счет: <span id="score-display">0</span></span>
+                    </div>
+                    <div class="stat-item mistakes">
+                        <span>⚠️</span>
+                        <span>Ошибки: <span id="mistakes-display">0</span></span>
+                    </div>
+                    <div class="stat-item best">
+                        <span>🏆</span>
+                        <span>Лучший: <span id="best-score-display">0</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="doc-list" id="doc-list">
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <div class="empty-state-icon">📭</div>
+                    <div>Нет входящих документов</div>
+                    <div style="font-size: 14px; margin-top: 8px; color: #bbb;">Новые документы появятся автоматически</div>
+                </div>
+            </div>
         </div>
 
-        <!-- Заглушки -->
+        <!-- Новый документ -->
         <div id="new_doc" class="tab-content">
-            <div class="placeholder">В разработке</div>
+            <h2>Создать новый документ</h2>
+            <div style="max-width: 600px;">
+                <div class="form-group">
+                    <label class="form-label">Тип документа</label>
+                    <select class="form-select" id="new-doc-type">
+                        <option value="УПД">УПД</option>
+                        <option value="СФ">СФ</option>
+                        <option value="Акт">Акт</option>
+                        <option value="Счёт">Счёт</option>
+                    </select>
         </div>
+                <div class="form-group">
+                    <label class="form-label">Контрагент-получатель</label>
+                    <select class="form-select" id="new-doc-contractor"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Сумма (руб.)</label>
+                    <input type="number" class="form-input" id="new-doc-amount" value="10000" min="1000" step="1000">
+                </div>
+                <div class="doc-preview" id="new-doc-preview" style="display: none;">
+                    <div><b>Тип:</b> <span id="preview-type"></span></div>
+                    <div><b>Получатель:</b> <span id="preview-contractor"></span></div>
+                    <div><b>Сумма:</b> <span id="preview-amount"></span> руб.</div>
+                    <div><b>Награда:</b> <span id="preview-reward"></span> очков</div>
+                </div>
+                <button class="btn btn-primary" onclick="createOutgoingDocument()" style="width: 100%; margin-top: 16px;">
+                    📤 Отправить документ
+                </button>
+            </div>
+        </div>
+
+        <!-- Документы (архив) -->
         <div id="documents" class="tab-content">
-            <div class="placeholder">Выберите подраздел</div>
+            <h2>Архив документов</h2>
+            <div class="stat-card">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <div>
+                        <div style="color: #999; font-size: 14px;">Всего обработано</div>
+                        <div class="stat-value" id="stat-total">0</div>
         </div>
+                    <div>
+                        <div style="color: #999; font-size: 14px;">Правильно</div>
+                        <div class="stat-value" style="color: #4caf50;" id="stat-correct">0</div>
+                    </div>
+                    <div>
+                        <div style="color: #999; font-size: 14px;">Ошибки</div>
+                        <div class="stat-value" style="color: #d32f2f;" id="stat-errors">0</div>
+                    </div>
+                    <div>
+                        <div style="color: #999; font-size: 14px;">Точность</div>
+                        <div class="stat-value" id="stat-accuracy">0%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="archive-filters">
+                <button class="filter-btn active" onclick="filterArchive('all', event)">Все</button>
+                <button class="filter-btn" onclick="filterArchive('УПД', event)">УПД</button>
+                <button class="filter-btn" onclick="filterArchive('СФ', event)">СФ</button>
+                <button class="filter-btn" onclick="filterArchive('Акт', event)">Акт</button>
+                <button class="filter-btn" onclick="filterArchive('Счёт', event)">Счёт</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="archive-table">
+                    <thead>
+                        <tr>
+                            <th>Тип</th>
+                            <th>Контрагент</th>
+                            <th>Статус</th>
+                            <th>Время обработки</th>
+                            <th>Дата</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archive-table-body">
+                        <tr><td colspan="5" style="text-align: center; padding: 40px; color: #999;">Нет обработанных документов</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Контрагенты -->
         <div id="agents" class="tab-content">
-            <div class="placeholder">В разработке</div>
+            <h2>Контрагенты</h2>
+            <div id="contractors-list"></div>
         </div>
+
+        <!-- Сообщения -->
         <div id="chat" class="tab-content">
-            <div class="placeholder">В разработке</div>
+            <h2>Сообщения</h2>
+            <div class="message-list" id="messages-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">💬</div>
+                    <div>Нет сообщений</div>
         </div>
+            </div>
+        </div>
+
+        <!-- Настройки -->
         <div id="settings" class="tab-content">
-            <div class="placeholder">
-                <h3>Игра на паузе</h3>
-                <p>Настройки в разработке</p>
+            <h2>Настройки</h2>
+            
+            <div class="settings-section">
+                <div class="settings-title">Игровые настройки</div>
+                <div class="setting-item">
+                    <div>
+                        <div style="font-weight: 600;">Уровень сложности</div>
+                        <div style="font-size: 12px; color: #999;">Влияет на скорость и количество ошибок</div>
+            </div>
+                    <select class="form-select" id="difficulty-select" style="width: 150px;" onchange="changeDifficulty()">
+                        <option value="easy">Легкий</option>
+                        <option value="medium" selected>Средний</option>
+                        <option value="hard">Сложный</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <div>
+                        <div style="font-weight: 600;">Скорость появления документов</div>
+                        <div style="font-size: 12px; color: #999;">Интервал между документами</div>
+                    </div>
+                    <select class="form-select" id="speed-select" style="width: 150px;" onchange="changeSpeed()">
+                        <option value="slow">Медленно (5 сек)</option>
+                        <option value="normal" selected>Нормально (3 сек)</option>
+                        <option value="fast">Быстро (2 сек)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-title">Статистика игры</div>
+                <div class="stat-card">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                        <div>
+                            <div style="color: #999; font-size: 14px;">Время игры</div>
+                            <div class="stat-value" id="stat-playtime">0 мин</div>
+                        </div>
+                        <div>
+                            <div style="color: #999; font-size: 14px;">Текущий уровень</div>
+                            <div class="stat-value" id="stat-level">1</div>
+                        </div>
+                        <div>
+                            <div style="color: #999; font-size: 14px;">Всего очков</div>
+                            <div class="stat-value" id="stat-total-score">0</div>
+                        </div>
+                        <div>
+                            <div style="color: #999; font-size: 14px;">Достижений</div>
+                            <div class="stat-value" id="stat-achievements">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-title">Улучшения</div>
+                <div id="upgrades-list"></div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-title">Действия</div>
+                <button class="btn btn-danger" onclick="resetProgress()" style="width: 100%;">
+                    🔄 Сбросить прогресс
+                </button>
             </div>
         </div>
     </div>
@@ -345,6 +944,9 @@
             <div class="modal-row"><b>Контрагент:</b> <span id="modal-contractor"></span></div>
             <div class="modal-row"><b>Статус:</b> <span id="modal-status">Входящий</span></div>
             <div class="modal-row"><b>Осталось:</b> <span id="modal-timer"></span></div>
+            <div class="timer-progress" id="modal-progress" style="margin-top: 10px;">
+                <div class="timer-progress-bar" id="modal-progress-bar"></div>
+            </div>
 
             <div class="btn-group">
                 <button class="btn btn-primary" id="btn-sign">✔ Подписать</button>
@@ -357,12 +959,49 @@
     <script>
         // === Глобальные переменные ===
         let incomingDocuments = [];
+        let processedDocuments = [];
+        let outgoingDocuments = [];
+        let messages = [];
         let score = 0;
         let mistakes = 0;
         let isPaused = false;
         let gameInterval;
+        let renderInterval;
+        let modalTimerInterval = null;
+        let documentIdCounter = 0;
+        let bestScore = 0;
+        let playerLevel = 1;
+        let playerExp = 0;
+        let expToNextLevel = 100;
+        let combo = 0;
+        let maxCombo = 0;
+        let gameStartTime = Date.now();
+        let totalPlayTime = 0;
+        let difficulty = 'medium';
+        let gameSpeed = 3000;
+        let currentFilter = 'all';
+        
+        // Система улучшений
+        let upgrades = {
+            extraTime: { level: 0, maxLevel: 5, cost: 50 },
+            reduceErrors: { level: 0, maxLevel: 5, cost: 100 },
+            bonusPoints: { level: 0, maxLevel: 5, cost: 75 },
+            fastProcessing: { level: 0, maxLevel: 3, cost: 150 }
+        };
+        
+        // Достижения
+        let achievements = {
+            docs100: { unlocked: false, name: 'Первая сотня', desc: 'Обработать 100 документов' },
+            docs500: { unlocked: false, name: 'Опытный', desc: 'Обработать 500 документов' },
+            docs1000: { unlocked: false, name: 'Мастер', desc: 'Обработать 1000 документов' },
+            accuracy95: { unlocked: false, name: 'Точность', desc: '95% точность за сессию' },
+            accuracy100: { unlocked: false, name: 'Идеал', desc: '100% точность за сессию' },
+            speed10: { unlocked: false, name: 'Скорость', desc: '10 документов за минуту' },
+            maxTrust: { unlocked: false, name: 'Доверие', desc: 'Максимальное доверие со всеми' },
+            noErrors50: { unlocked: false, name: 'Без ошибок', desc: '50 документов без ошибок' }
+        };
 
-        // === Иконки типов документов и "открыть" ===
+        // === Иконки типов документов ===
         const typeIcons = {
             "УПД": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/upd.png",
             "СФ": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sf.png",
@@ -370,14 +1009,44 @@
             "Счёт": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sch.png"
         };
 
-        // Иконка "открыть" слева от типа документа
-        const openIcon = "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/open.png";
-
-        const contractors = [
-            { name: "ООО Ромашка", errorRate: 0.5 },
-            { name: "ИП Иванов", errorRate: 0.3 },
-            { name: "АО Корпорация", errorRate: 0.4 },
-            { name: "Новый партнёр", errorRate: 0.7 }
+        // Контрагенты с системой доверия
+        let contractors = [
+            { 
+                name: "ООО Ромашка", 
+                baseErrorRate: 0.5,
+                errorRate: 0.5,
+                trust: 50,
+                level: 'novice',
+                bonus: null,
+                bonusDesc: 'При доверии 80+: +50% времени на обработку'
+            },
+            { 
+                name: "ИП Иванов", 
+                baseErrorRate: 0.3,
+                errorRate: 0.3,
+                trust: 50,
+                level: 'novice',
+                bonus: null,
+                bonusDesc: 'При доверии 80+: +5 очков за каждый документ'
+            },
+            { 
+                name: "АО Корпорация", 
+                baseErrorRate: 0.4,
+                errorRate: 0.4,
+                trust: 50,
+                level: 'novice',
+                bonus: null,
+                bonusDesc: 'При доверии 80+: двойные очки за правильные подписи'
+            },
+            { 
+                name: "Новый партнёр", 
+                baseErrorRate: 0.7,
+                errorRate: 0.7,
+                trust: 30,
+                level: 'novice',
+                bonus: null,
+                bonusDesc: 'При доверии 80+: случайные бонусы'
+            }
         ];
 
         // === Старт игры ===
@@ -387,19 +1056,26 @@
                 if (!isPaused && incomingDocuments.length < 15) {
                     addDocument();
                 }
-            }, 3000);
+            }, gameSpeed);
         }
 
         // === Добавить документ ===
         function addDocument() {
             const type = ["УПД", "СФ", "Акт", "Счёт"][Math.floor(Math.random() * 4)];
             const contractor = contractors[Math.floor(Math.random() * contractors.length)];
-            const valid = Math.random() > contractor.errorRate;
-            const baseTime = contractor.name === "ИП Иванов" ? 16000 : 24000;
+            
+            // Применяем улучшение "Меньше ошибок"
+            let adjustedErrorRate = contractor.errorRate;
+            adjustedErrorRate *= Math.max(0, (1 - upgrades.reduceErrors.level * 0.1));
+            
+            const valid = Math.random() > adjustedErrorRate;
+            let baseTime = contractor.name === "ИП Иванов" ? 16000 : 24000;
+            // Применяем улучшение "Дополнительное время"
+            baseTime += upgrades.extraTime.level * 1000;
             const ttl = baseTime + 10000; // +10 сек
 
             incomingDocuments.push({
-                id: Date.now(),
+                id: ++documentIdCounter,
                 type,
                 contractor: contractor.name,
                 valid,
@@ -412,132 +1088,428 @@
             renderIncoming();
         }
 
-        // === Обновить счётчик входящих ===
+        // === Обновить счётчик ===
         function updateCounter() {
             const count = incomingDocuments.length;
-            document.getElementById('counter').textContent = count;
+            const counterEl = document.getElementById('counter');
+            if (counterEl) {
+                counterEl.textContent = count;
+            }
         }
 
-        // === Обновить счётчик очков и ошибок ===
+        // === Загрузить лучший результат ===
+        function loadBestScore() {
+            const saved = localStorage.getItem('diadoc_best_score');
+            if (saved) {
+                bestScore = parseInt(saved, 10);
+            }
+        }
+
+        // === Сохранить лучший результат ===
+        function saveBestScore() {
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('diadoc_best_score', bestScore.toString());
+            }
+        }
+
+        // === Обновить статистику ===
         function updateStats() {
-            document.getElementById('score').textContent = score;
-            document.getElementById('mistakes').textContent = mistakes;
+            const scoreEl = document.getElementById('score-display');
+            const mistakesEl = document.getElementById('mistakes-display');
+            const bestScoreEl = document.getElementById('best-score-display');
+            if (scoreEl) scoreEl.textContent = score;
+            if (mistakesEl) mistakesEl.textContent = mistakes;
+            if (bestScoreEl) {
+                saveBestScore();
+                bestScoreEl.textContent = bestScore;
+            }
+            
+            // Обновляем статистику в настройках
+            const playtime = totalPlayTime + (Date.now() - gameStartTime);
+            const playtimeMin = Math.floor(playtime / 60000);
+            const achievementsCount = Object.values(achievements).filter(a => a.unlocked).length;
+            
+            const statPlaytime = document.getElementById('stat-playtime');
+            const statLevel = document.getElementById('stat-level');
+            const statTotalScore = document.getElementById('stat-total-score');
+            const statAchievements = document.getElementById('stat-achievements');
+            
+            if (statPlaytime) statPlaytime.textContent = playtimeMin + ' мин';
+            if (statLevel) statLevel.textContent = playerLevel;
+            if (statTotalScore) statTotalScore.textContent = score;
+            if (statAchievements) statAchievements.textContent = achievementsCount;
+        }
+        
+        // === Обновление отображения уровня ===
+        function updateLevelDisplay() {
+            const levelEl = document.getElementById('level-display');
+            const expEl = document.getElementById('level-exp');
+            const expMaxEl = document.getElementById('level-exp-max');
+            const progressEl = document.getElementById('level-progress-bar');
+            
+            if (levelEl) levelEl.textContent = `Уровень ${playerLevel}`;
+            if (expEl) expEl.textContent = playerExp;
+            if (expMaxEl) expMaxEl.textContent = expToNextLevel;
+            if (progressEl) {
+                const progress = (playerExp / expToNextLevel) * 100;
+                progressEl.style.width = progress + '%';
+            }
         }
 
         // === Открыть вкладку ===
         function openTab(tabId) {
+            // Сброс активных классов
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
 
+            // Открываем нужную вкладку
             const tab = document.getElementById(tabId);
             if (tab) tab.classList.add('active');
 
+            // Активируем пункт меню
             if (tabId === 'incoming') {
                 document.querySelector('.submenu-item').classList.add('active');
                 document.getElementById('sidebar').classList.add('minimized');
             } else {
                 document.getElementById('sidebar').classList.remove('minimized');
-                document.querySelector(`[onclick="openTab('${tabId}')"]`)?.classList.add('active');
+                const menuItem = document.querySelector(`[onclick="openTab('${tabId}')"]`);
+                if (menuItem) menuItem.classList.add('active');
             }
 
+            // Пауза/возобновление
             isPaused = tabId !== 'incoming';
+            
+            // Обновляем контент вкладок
+            if (tabId === 'agents') {
+                renderContractors();
+            } else if (tabId === 'chat') {
+                renderMessages();
+            } else if (tabId === 'new_doc') {
+                renderNewDocForm();
+            } else if (tabId === 'documents') {
+                renderArchive();
+            } else if (tabId === 'settings') {
+                updateStats();
+                renderUpgrades();
+            }
         }
 
         // === Отрисовка списка ===
         function renderIncoming() {
             const list = document.getElementById('doc-list');
-            list.innerHTML = '';
+            const emptyState = document.getElementById('empty-state');
+            if (!list) return;
 
+            // Удаляем просроченные документы
+            const now = Date.now();
+            const expiredDocs = [];
             incomingDocuments.forEach(doc => {
-                const elapsed = Date.now() - doc.startTime;
+                const elapsed = now - doc.startTime;
                 const timeLeft = Math.max(0, Math.ceil((doc.ttl - elapsed) / 1000));
-
                 if (timeLeft <= 0) {
-                    removeDocument(doc.id);
+                    expiredDocs.push(doc.id);
+                }
+            });
+
+            expiredDocs.forEach(id => {
+                const doc = incomingDocuments.find(d => d.id === id);
+                if (doc) {
+                    const contractor = contractors.find(c => c.name === doc.contractor);
+                    processedDocuments.push({
+                        id: doc.id,
+                        type: doc.type,
+                        contractor: doc.contractor,
+                        correct: false,
+                        processingTime: Math.ceil(doc.ttl / 1000),
+                        processedAt: Date.now()
+                    });
+                    if (contractor) {
+                        updateContractorTrust(doc.contractor, -10);
+                        addMessage(generateMessage('complaint', doc.contractor));
+                    }
+                }
+                removeDocument(id);
                     showNotification('⚠️ Документ просрочен и удалён!');
                     mistakes += 2;
-                    updateStats();
+                combo = 0;
+                updateStats();
+            });
+
+            // Показываем пустое состояние
+            if (incomingDocuments.length === 0) {
+                list.innerHTML = '';
+                if (emptyState) emptyState.style.display = 'block';
                     return;
+            } else {
+                if (emptyState) emptyState.style.display = 'none';
+            }
+
+            // Сортируем по срочности (меньше времени = выше)
+            const sortedDocs = [...incomingDocuments].sort((a, b) => {
+                const timeLeftA = Math.max(0, Math.ceil((a.ttl - (Date.now() - a.startTime)) / 1000));
+                const timeLeftB = Math.max(0, Math.ceil((b.ttl - (Date.now() - b.startTime)) / 1000));
+                return timeLeftA - timeLeftB;
+            });
+
+            list.innerHTML = '';
+
+            // Отрисовываем документы
+            sortedDocs.forEach(doc => {
+                const elapsed = Date.now() - doc.startTime;
+                const timeLeft = Math.max(0, Math.ceil((doc.ttl - elapsed) / 1000));
+                const totalTime = Math.ceil(doc.ttl / 1000);
+                const progress = Math.max(0, Math.min(100, (timeLeft / totalTime) * 100));
+
+                // Определяем класс срочности
+                let urgencyClass = '';
+                if (timeLeft <= 5) {
+                    urgencyClass = 'urgent';
+                } else if (timeLeft <= 10) {
+                    urgencyClass = 'warning';
                 }
 
                 const item = document.createElement('div');
-                item.className = 'doc-item';
-                item.onclick = () => openDocumentModal(doc);
+                item.className = `doc-item ${urgencyClass}`;
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    openDocumentModal(doc);
+                };
 
-                // ✅ Исправлено: НЕТ дублирования "СФСФ", "АктАкт"
-                // Тип выводится только один раз
+                const progressBarClass = timeLeft <= 5 ? 'urgent' : (timeLeft <= 10 ? 'warning' : '');
+
                 item.innerHTML = `
-                    <img src="${openIcon}" class="doc-icon-open" alt="Открыть">
+                    <img src="${typeIcons[doc.type] || ''}" alt="${doc.type}" onerror="this.style.display='none'">
                     <div class="doc-type">${doc.type}</div>
                     <div class="doc-contractor">${doc.contractor}</div>
                     <div class="doc-status">Входящий</div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
                     <div class="doc-timer">Осталось: ${timeLeft} сек</div>
+                        <div class="timer-progress" style="width: 100px;">
+                            <div class="timer-progress-bar ${progressBarClass}" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
                 `;
                 list.appendChild(item);
             });
         }
 
+        // === Закрыть модальное окно ===
+        function closeDocumentModal() {
+            if (modalTimerInterval) {
+                clearInterval(modalTimerInterval);
+                modalTimerInterval = null;
+            }
+            const modal = document.getElementById('modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
         // === Модальное окно ===
         function openDocumentModal(doc) {
-            document.getElementById('modal').style.display = 'flex';
+            // Закрываем предыдущее модальное окно, если открыто
+            closeDocumentModal();
+
+            const modal = document.getElementById('modal');
+            if (!modal) return;
+
+            modal.style.display = 'flex';
             document.getElementById('modal-title').textContent = doc.type;
             document.getElementById('modal-contractor').textContent = doc.contractor;
 
             const timerEl = document.getElementById('modal-timer');
+            const progressBar = document.getElementById('modal-progress-bar');
+            const totalTime = Math.ceil(doc.ttl / 1000);
+            
             const updateTimer = () => {
+                if (!incomingDocuments.find(d => d.id === doc.id)) {
+                    closeDocumentModal();
+                    return;
+                }
                 const elapsed = Date.now() - doc.startTime;
                 const timeLeft = Math.max(0, Math.ceil((doc.ttl - elapsed) / 1000));
+                const progress = Math.max(0, Math.min(100, (timeLeft / totalTime) * 100));
+                
+                if (timerEl) {
                 timerEl.textContent = timeLeft + ' сек';
+                }
+                
+                if (progressBar) {
+                    progressBar.style.width = progress + '%';
+                    // Обновляем цвет прогресс-бара
+                    progressBar.className = 'timer-progress-bar';
+                    if (timeLeft <= 5) {
+                        progressBar.classList.add('urgent');
+                    } else if (timeLeft <= 10) {
+                        progressBar.classList.add('warning');
+                    }
+                }
 
                 if (timeLeft <= 0) {
+                    const contractor = contractors.find(c => c.name === doc.contractor);
+                    processedDocuments.push({
+                        id: doc.id,
+                        type: doc.type,
+                        contractor: doc.contractor,
+                        correct: false,
+                        processingTime: Math.ceil(doc.ttl / 1000),
+                        processedAt: Date.now()
+                    });
+                    if (contractor) {
+                        updateContractorTrust(doc.contractor, -10);
+                        addMessage(generateMessage('complaint', doc.contractor));
+                    }
                     closeDocumentModal();
                     removeDocument(doc.id);
                     showNotification('⚠️ Документ просрочен и удалён!');
                     mistakes += 2;
+                    combo = 0;
                     updateStats();
                 }
             };
 
-            const timerInterval = setInterval(updateTimer, 1000);
+            modalTimerInterval = setInterval(updateTimer, 1000);
             updateTimer();
 
-            document.getElementById('btn-sign').onclick = () => {
+            // Обработчики кнопок
+            const btnSign = document.getElementById('btn-sign');
+            const btnReject = document.getElementById('btn-reject');
+            const btnWaiting = document.getElementById('btn-waiting');
+
+            if (btnSign) {
+                btnSign.onclick = () => {
+                    const contractor = contractors.find(c => c.name === doc.contractor);
+                    const processingTime = Math.ceil((Date.now() - doc.startTime) / 1000);
+                    let correct = false;
+                    let pointsEarned = 0;
+                    
                 if (doc.type === 'Счёт') {
                     showNotification('🚫 Счёт нельзя подписывать');
                     mistakes += 3;
-                } else if (doc.valid) {
-                    score += 10;
-                    showNotification('✅ Подписан');
+                        correct = false;
+                        pointsEarned = -15;
+                    } else if (doc.valid) {
+                        pointsEarned = 10;
+                        // Применяем улучшение "Бонусные очки"
+                        pointsEarned = Math.floor(pointsEarned * (1 + upgrades.bonusPoints.level * 0.2));
+                        // Применяем бонусы контрагентов
+                        pointsEarned = applyContractorBonuses(contractor, pointsEarned);
+                        // Применяем комбо
+                        combo++;
+                        if (combo > 1) {
+                            const comboBonus = Math.min(combo * 2, 20);
+                            pointsEarned += comboBonus;
+                        }
+                        // Применяем улучшение "Быстрая обработка"
+                        if (upgrades.fastProcessing.level > 0 && processingTime < 5) {
+                            pointsEarned += upgrades.fastProcessing.level * 5;
+                        }
+                        maxCombo = Math.max(maxCombo, combo);
+                        score += pointsEarned;
+                        addExp(5);
+                        updateContractorTrust(doc.contractor, 2);
+                        correct = true;
+                        showNotification(`✅ Подписан${combo > 1 ? ` (x${combo} комбо!)` : ''}`);
                 } else {
                     score -= 15;
                     mistakes += 2;
+                        combo = 0;
+                        updateContractorTrust(doc.contractor, -5);
+                        correct = false;
+                        pointsEarned = -15;
                     showNotification('❌ Ошибка при подписи');
                 }
+                    
+                    // Добавляем в архив
+                    processedDocuments.push({
+                        id: doc.id,
+                        type: doc.type,
+                        contractor: doc.contractor,
+                        correct,
+                        processingTime,
+                        processedAt: Date.now()
+                    });
+                    
+                    checkAchievements();
                 closeDocumentModal();
                 removeDocument(doc.id);
-                updateStats();
-            };
+                    updateStats();
+                };
+            }
 
-            document.getElementById('btn-reject').onclick = () => {
+            if (btnReject) {
+                btnReject.onclick = () => {
+                    const contractor = contractors.find(c => c.name === doc.contractor);
+                    const processingTime = Math.ceil((Date.now() - doc.startTime) / 1000);
+                    
                 score += 5;
+                    addExp(2);
+                    combo = 0;
+                    updateContractorTrust(doc.contractor, 1);
+                    
+                    processedDocuments.push({
+                        id: doc.id,
+                        type: doc.type,
+                        contractor: doc.contractor,
+                        correct: true,
+                        processingTime,
+                        processedAt: Date.now()
+                    });
+                    
                 showNotification('🗑 Отклонён');
                 closeDocumentModal();
                 removeDocument(doc.id);
-                updateStats();
+                    updateStats();
             };
+            }
 
-            document.getElementById('btn-waiting').onclick = () => {
+            if (btnWaiting) {
+                btnWaiting.onclick = () => {
+                    const contractor = contractors.find(c => c.name === doc.contractor);
+                    const processingTime = Math.ceil((Date.now() - doc.startTime) / 1000);
+                    
+                    combo = 0;
+                    updateContractorTrust(doc.contractor, -2);
+                    
+                    processedDocuments.push({
+                        id: doc.id,
+                        type: doc.type,
+                        contractor: doc.contractor,
+                        correct: false,
+                        processingTime,
+                        processedAt: Date.now()
+                    });
+                    
                 showNotification('📝 На исправлении');
                 closeDocumentModal();
                 removeDocument(doc.id);
-                setTimeout(addDocument, 3000);
-            };
-
-            function closeDocumentModal() {
-                clearInterval(timerInterval);
-                document.getElementById('modal').style.display = 'none';
+                    updateStats();
+                    setTimeout(() => {
+                        if (!isPaused) {
+                            addDocument();
+                        }
+                    }, 3000);
+                };
             }
+
+            // Закрытие по клику вне модального окна
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    closeDocumentModal();
+                }
+            };
         }
+
+        // === Обработка клавиатуры ===
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('modal');
+                if (modal && modal.style.display === 'flex') {
+                    closeDocumentModal();
+                }
+            }
+        });
 
         // === Удалить документ ===
         function removeDocument(id) {
@@ -552,21 +1524,600 @@
             n.style.cssText = `
                 position: fixed; top: 20px; right: 20px;
                 background: #00BEA2; color: white; padding: 12px 16px;
-                border-radius: 6px; z-index: 1000; font-size: 14px;
+                border-radius: 6px; z-index: 2000; font-size: 14px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             `;
             n.textContent = text;
             document.body.appendChild(n);
-            setTimeout(() => n.remove(), 2000);
+            setTimeout(() => {
+                if (n.parentNode) {
+                    n.remove();
+                }
+            }, 2000);
         }
 
+        // === Обновить доверие контрагента ===
+        function updateContractorTrust(contractorName, change) {
+            const contractor = contractors.find(c => c.name === contractorName);
+            if (!contractor) return;
+            
+            contractor.trust = Math.max(0, Math.min(100, contractor.trust + change));
+            
+            // Обновляем уровень доверия
+            if (contractor.trust < 30) {
+                contractor.level = 'novice';
+            } else if (contractor.trust < 80) {
+                contractor.level = 'partner';
+            } else {
+                contractor.level = 'trusted';
+                // Активируем бонусы
+                if (!contractor.bonus) {
+                    activateContractorBonus(contractor);
+                }
+            }
+            
+            // Обновляем errorRate на основе доверия
+            const trustFactor = (100 - contractor.trust) / 100;
+            contractor.errorRate = contractor.baseErrorRate * (0.5 + trustFactor * 0.5);
+            
+            renderContractors();
+        }
+        
+        // === Активировать бонус контрагента ===
+        function activateContractorBonus(contractor) {
+            contractor.bonus = true;
+            showNotification(`🎉 Разблокирован бонус от ${contractor.name}!`);
+        }
+        
+        // === Применить бонусы контрагентов ===
+        function applyContractorBonuses(contractor, baseScore) {
+            if (!contractor.bonus) return baseScore;
+            
+            let bonusScore = baseScore;
+            if (contractor.name === "ИП Иванов") {
+                bonusScore += 5;
+            } else if (contractor.name === "АО Корпорация") {
+                bonusScore *= 2;
+            } else if (contractor.name === "Новый партнёр") {
+                bonusScore += Math.floor(Math.random() * 10) + 5;
+            }
+            
+            return bonusScore;
+        }
+        
+        // === Отрисовка контрагентов ===
+        function renderContractors() {
+            const list = document.getElementById('contractors-list');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            
+            contractors.forEach(contractor => {
+                const card = document.createElement('div');
+                card.className = 'contractor-card';
+                
+                const trustPercent = contractor.trust;
+                const levelText = contractor.level === 'novice' ? 'Новичок' : 
+                                 contractor.level === 'partner' ? 'Партнёр' : 'Доверенный';
+                
+                card.innerHTML = `
+                    <div class="contractor-header">
+                        <div class="contractor-name">${contractor.name}</div>
+                        <div class="trust-level ${contractor.level}">${levelText}</div>
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #999; margin-bottom: 4px;">
+                            <span>Доверие</span>
+                            <span>${trustPercent}%</span>
+                        </div>
+                        <div class="trust-progress">
+                            <div class="trust-progress-bar" style="width: ${trustPercent}%"></div>
+                        </div>
+                    </div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                        Вероятность ошибки: ${Math.round(contractor.errorRate * 100)}%
+                    </div>
+                    ${contractor.bonus ? `<div class="contractor-bonus">✨ ${contractor.bonusDesc}</div>` : ''}
+                `;
+                
+                list.appendChild(card);
+            });
+        }
+        
+        // === Генерация сообщения ===
+        function generateMessage(type, contractorName) {
+            const messages = {
+                thanks: [
+                    `Спасибо за быструю обработку документа!`,
+                    `Отличная работа! Документ обработан вовремя.`,
+                    `Благодарим за оперативность!`
+                ],
+                complaint: [
+                    `Обнаружена ошибка в документе. Пожалуйста, будьте внимательнее.`,
+                    `Документ был обработан неправильно.`,
+                    `Требуется пересмотр обработки документа.`
+                ],
+                task: [
+                    `Срочный документ! Обработайте в течение 10 секунд за бонус!`,
+                    `Особый случай: обработайте документ быстро для получения награды.`,
+                    `Специальное задание: быстрая обработка = двойные очки!`
+                ]
+            };
+            
+            const text = messages[type][Math.floor(Math.random() * messages[type].length)];
+            
+            return {
+                id: Date.now(),
+                type,
+                sender: contractorName,
+                text,
+                time: new Date(),
+                read: false
+            };
+        }
+        
+        // === Добавить сообщение ===
+        function addMessage(message) {
+            messages.unshift(message);
+            if (messages.length > 50) messages.pop();
+            renderMessages();
+        }
+        
+        // === Отрисовка сообщений ===
+        function renderMessages() {
+            const list = document.getElementById('messages-list');
+            if (!list) return;
+            
+            if (messages.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💬</div>
+                        <div>Нет сообщений</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = '';
+            
+            messages.forEach(msg => {
+                const item = document.createElement('div');
+                item.className = `message-item ${msg.read ? '' : 'unread'}`;
+                item.onclick = () => {
+                    msg.read = true;
+                    renderMessages();
+                };
+                
+                const timeStr = new Date(msg.time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                const typeLabels = {
+                    thanks: 'Благодарность',
+                    complaint: 'Жалоба',
+                    task: 'Задание'
+                };
+                
+                item.innerHTML = `
+                    <div class="message-header">
+                        <div class="message-sender">${msg.sender}</div>
+                        <div class="message-time">${timeStr}</div>
+                    </div>
+                    <div class="message-content">${msg.text}</div>
+                    <div class="message-type ${msg.type}">${typeLabels[msg.type]}</div>
+                `;
+                
+                list.appendChild(item);
+            });
+        }
+        
+        // === Создать исходящий документ ===
+        function createOutgoingDocument() {
+            const type = document.getElementById('new-doc-type').value;
+            const contractorName = document.getElementById('new-doc-contractor').value;
+            const amount = parseInt(document.getElementById('new-doc-amount').value);
+            
+            if (!contractorName || amount < 1000) {
+                showNotification('❌ Заполните все поля корректно');
+                return;
+            }
+            
+            const reward = Math.floor(amount / 1000) * 2;
+            score += reward;
+            
+            outgoingDocuments.push({
+                id: ++documentIdCounter,
+                type,
+                contractor: contractorName,
+                amount,
+                date: new Date()
+            });
+            
+            updateContractorTrust(contractorName, 5);
+            addMessage(generateMessage('thanks', contractorName));
+            showNotification(`✅ Документ отправлен! +${reward} очков`);
+            
+            updateStats();
+            renderNewDocForm();
+        }
+        
+        // === Отрисовка формы нового документа ===
+        function renderNewDocForm() {
+            const select = document.getElementById('new-doc-contractor');
+            if (select) {
+                select.innerHTML = contractors.map(c => 
+                    `<option value="${c.name}">${c.name}</option>`
+                ).join('');
+            }
+            
+            // Обновление превью
+            const type = document.getElementById('new-doc-type')?.value;
+            const contractor = document.getElementById('new-doc-contractor')?.value;
+            const amount = document.getElementById('new-doc-amount')?.value;
+            
+            if (type && contractor && amount) {
+                const preview = document.getElementById('new-doc-preview');
+                if (preview) {
+                    preview.style.display = 'block';
+                    document.getElementById('preview-type').textContent = type;
+                    document.getElementById('preview-contractor').textContent = contractor;
+                    document.getElementById('preview-amount').textContent = parseInt(amount).toLocaleString();
+                    document.getElementById('preview-reward').textContent = Math.floor(parseInt(amount) / 1000) * 2;
+                }
+            }
+        }
+        
+        // === Фильтрация архива ===
+        function filterArchive(filter, e) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            if (e && e.target) {
+                e.target.classList.add('active');
+            }
+            renderArchive();
+        }
+        
+        // === Отрисовка архива ===
+        function renderArchive() {
+            const tbody = document.getElementById('archive-table-body');
+            if (!tbody) return;
+            
+            let filtered = processedDocuments;
+            if (currentFilter !== 'all') {
+                filtered = processedDocuments.filter(doc => doc.type === currentFilter);
+            }
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #999;">Нет документов</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = filtered.map(doc => {
+                const date = new Date(doc.processedAt).toLocaleString('ru-RU');
+                const status = doc.correct ? '✅ Правильно' : '❌ Ошибка';
+                return `
+                    <tr>
+                        <td>${doc.type}</td>
+                        <td>${doc.contractor}</td>
+                        <td>${status}</td>
+                        <td>${doc.processingTime} сек</td>
+                        <td>${date}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Обновляем статистику
+            const total = processedDocuments.length;
+            const correct = processedDocuments.filter(d => d.correct).length;
+            const errors = processedDocuments.filter(d => !d.correct).length;
+            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+            
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-correct').textContent = correct;
+            document.getElementById('stat-errors').textContent = errors;
+            document.getElementById('stat-accuracy').textContent = accuracy + '%';
+        }
+        
+        // === Система уровней ===
+        function addExp(amount) {
+            playerExp += amount;
+            while (playerExp >= expToNextLevel) {
+                playerExp -= expToNextLevel;
+                playerLevel++;
+                expToNextLevel = Math.floor(expToNextLevel * 1.5);
+                showNotification(`🎉 Уровень ${playerLevel}!`);
+                checkAchievements();
+            }
+            updateLevelDisplay();
+        }
+        
+        
+        // === Проверка достижений ===
+        function checkAchievements() {
+            const total = processedDocuments.length;
+            const correct = processedDocuments.filter(d => d.correct).length;
+            const accuracy = total > 0 ? (correct / total) * 100 : 0;
+            
+            // Достижения по количеству
+            if (total >= 100 && !achievements.docs100.unlocked) {
+                unlockAchievement('docs100');
+            }
+            if (total >= 500 && !achievements.docs500.unlocked) {
+                unlockAchievement('docs500');
+            }
+            if (total >= 1000 && !achievements.docs1000.unlocked) {
+                unlockAchievement('docs1000');
+            }
+            
+            // Достижения по точности
+            if (accuracy >= 95 && total >= 20 && !achievements.accuracy95.unlocked) {
+                unlockAchievement('accuracy95');
+            }
+            if (accuracy === 100 && total >= 20 && !achievements.accuracy100.unlocked) {
+                unlockAchievement('accuracy100');
+            }
+            
+            // Достижение по доверию
+            const allMaxTrust = contractors.every(c => c.trust >= 80);
+            if (allMaxTrust && !achievements.maxTrust.unlocked) {
+                unlockAchievement('maxTrust');
+            }
+        }
+        
+        // === Разблокировка достижения ===
+        function unlockAchievement(id) {
+            if (achievements[id].unlocked) return;
+            
+            achievements[id].unlocked = true;
+            score += 100;
+            showNotification(`🏆 Достижение: ${achievements[id].name}! +100 очков`);
+            updateStats();
+        }
+        
+        // === Изменение сложности ===
+        function changeDifficulty() {
+            difficulty = document.getElementById('difficulty-select').value;
+            const multipliers = { easy: 1.5, medium: 1, hard: 0.7 };
+            const mult = multipliers[difficulty];
+            
+            contractors.forEach(c => {
+                c.errorRate = c.baseErrorRate * mult;
+            });
+            
+            showNotification(`⚙️ Сложность изменена на ${difficulty === 'easy' ? 'Легкий' : difficulty === 'medium' ? 'Средний' : 'Сложный'}`);
+        }
+        
+        // === Изменение скорости ===
+        function changeSpeed() {
+            const speed = document.getElementById('speed-select').value;
+            const speeds = { slow: 5000, normal: 3000, fast: 2000 };
+            gameSpeed = speeds[speed];
+            startGame();
+            showNotification(`⚡ Скорость изменена`);
+        }
+        
+        // === Отрисовка улучшений ===
+        function renderUpgrades() {
+            const list = document.getElementById('upgrades-list');
+            if (!list) return;
+            
+            const upgradeData = [
+                {
+                    id: 'extraTime',
+                    name: 'Дополнительное время',
+                    desc: 'Увеличивает время на обработку документов',
+                    icon: '⏱️',
+                    getLevel: () => upgrades.extraTime.level,
+                    getMaxLevel: () => upgrades.extraTime.maxLevel,
+                    getCost: () => upgrades.extraTime.cost * (upgrades.extraTime.level + 1)
+                },
+                {
+                    id: 'reduceErrors',
+                    name: 'Меньше ошибок',
+                    desc: 'Снижает вероятность ошибок контрагентов',
+                    icon: '✅',
+                    getLevel: () => upgrades.reduceErrors.level,
+                    getMaxLevel: () => upgrades.reduceErrors.maxLevel,
+                    getCost: () => upgrades.reduceErrors.cost * (upgrades.reduceErrors.level + 1)
+                },
+                {
+                    id: 'bonusPoints',
+                    name: 'Бонусные очки',
+                    desc: 'Увеличивает очки за правильные решения',
+                    icon: '💎',
+                    getLevel: () => upgrades.bonusPoints.level,
+                    getMaxLevel: () => upgrades.bonusPoints.maxLevel,
+                    getCost: () => upgrades.bonusPoints.cost * (upgrades.bonusPoints.level + 1)
+                },
+                {
+                    id: 'fastProcessing',
+                    name: 'Быстрая обработка',
+                    desc: 'Бонус за быструю обработку документов',
+                    icon: '⚡',
+                    getLevel: () => upgrades.fastProcessing.level,
+                    getMaxLevel: () => upgrades.fastProcessing.maxLevel,
+                    getCost: () => upgrades.fastProcessing.cost * (upgrades.fastProcessing.level + 1)
+                }
+            ];
+            
+            list.innerHTML = '';
+            
+            upgradeData.forEach(upgrade => {
+                const level = upgrade.getLevel();
+                const maxLevel = upgrade.getMaxLevel();
+                const cost = upgrade.getCost();
+                const isMaxed = level >= maxLevel;
+                
+                const card = document.createElement('div');
+                card.className = `upgrade-card ${isMaxed ? 'purchased' : ''}`;
+                card.onclick = () => !isMaxed && purchaseUpgrade(upgrade.id);
+                
+                card.innerHTML = `
+                    <div class="upgrade-header">
+                        <div>
+                            <div style="font-weight: 600; font-size: 16px;">
+                                ${upgrade.icon} ${upgrade.name}
+                            </div>
+                            <div style="font-size: 13px; color: #666; margin-top: 4px;">
+                                ${upgrade.desc}
+                            </div>
+                        </div>
+                        <div class="upgrade-price">
+                            ${isMaxed ? 'MAX' : cost + ' очков'}
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 13px; color: #999;">
+                        Уровень: ${level}/${maxLevel}
+                    </div>
+                `;
+                
+                list.appendChild(card);
+            });
+        }
+        
+        // === Покупка улучшения ===
+        function purchaseUpgrade(id) {
+            const upgrade = upgrades[id];
+            if (!upgrade) return;
+            
+            const cost = upgrade.cost * (upgrade.level + 1);
+            
+            if (score < cost) {
+                showNotification('❌ Недостаточно очков!');
+                return;
+            }
+            
+            if (upgrade.level >= upgrade.maxLevel) {
+                showNotification('✅ Улучшение максимального уровня!');
+                return;
+            }
+            
+            score -= cost;
+            upgrade.level++;
+            
+            showNotification(`✅ Улучшение "${id}" куплено!`);
+            updateStats();
+            renderUpgrades();
+        }
+        
+        // === Сброс прогресса ===
+        function resetProgress() {
+            if (!confirm('Вы уверены? Весь прогресс будет удален!')) return;
+            
+            localStorage.clear();
+            location.reload();
+        }
+        
+        // === Сохранение игры ===
+        function saveGameData() {
+            const data = {
+                contractors,
+                score,
+                mistakes,
+                playerLevel,
+                playerExp,
+                expToNextLevel,
+                processedDocuments: processedDocuments.slice(-1000),
+                outgoingDocuments: outgoingDocuments.slice(-100),
+                messages: messages.slice(-50),
+                achievements,
+                upgrades,
+                totalPlayTime: totalPlayTime + (Date.now() - gameStartTime),
+                bestScore,
+                difficulty,
+                gameSpeed
+            };
+            
+            localStorage.setItem('diadoc_game_data', JSON.stringify(data));
+        }
+        
+        // === Загрузка игры ===
+        function loadGameData() {
+            const saved = localStorage.getItem('diadoc_game_data');
+            if (!saved) return;
+            
+            try {
+                const data = JSON.parse(saved);
+                contractors = data.contractors || contractors;
+                score = data.score || 0;
+                mistakes = data.mistakes || 0;
+                playerLevel = data.playerLevel || 1;
+                playerExp = data.playerExp || 0;
+                expToNextLevel = data.expToNextLevel || 100;
+                processedDocuments = data.processedDocuments || [];
+                outgoingDocuments = data.outgoingDocuments || [];
+                messages = data.messages || [];
+                achievements = data.achievements || achievements;
+                upgrades = data.upgrades || upgrades;
+                totalPlayTime = data.totalPlayTime || 0;
+                bestScore = data.bestScore || 0;
+                difficulty = data.difficulty || 'medium';
+                gameSpeed = data.gameSpeed || 3000;
+                
+                // Восстанавливаем настройки в UI
+                const difficultySelect = document.getElementById('difficulty-select');
+                const speedSelect = document.getElementById('speed-select');
+                if (difficultySelect) difficultySelect.value = difficulty;
+                if (speedSelect) {
+                    const speedMap = { 5000: 'slow', 3000: 'normal', 2000: 'fast' };
+                    speedSelect.value = speedMap[gameSpeed] || 'normal';
+                }
+                
+                gameStartTime = Date.now();
+            } catch (e) {
+                console.error('Ошибка загрузки данных:', e);
+            }
+        }
+
+        // === Обработчики формы нового документа ===
+        document.addEventListener('DOMContentLoaded', () => {
+            const typeSelect = document.getElementById('new-doc-type');
+            const contractorSelect = document.getElementById('new-doc-contractor');
+            const amountInput = document.getElementById('new-doc-amount');
+            
+            if (typeSelect) {
+                typeSelect.addEventListener('change', renderNewDocForm);
+            }
+            if (contractorSelect) {
+                contractorSelect.addEventListener('change', renderNewDocForm);
+            }
+            if (amountInput) {
+                amountInput.addEventListener('input', renderNewDocForm);
+            }
+        });
+        
         // === Старт ===
         window.onload = () => {
-            updateStats(); // Инициализация счётчика
+            loadBestScore();
+            loadGameData();
+            renderContractors();
+            renderMessages();
+            renderNewDocForm();
+            renderArchive();
+            renderUpgrades();
+            updateLevelDisplay();
+            updateStats();
             startGame();
-            setInterval(renderIncoming, 1000); // Обновление таймеров
+            renderInterval = setInterval(renderIncoming, 1000);
+            renderIncoming();
+            
+            // Автосохранение каждые 30 секунд
+            setInterval(saveGameData, 30000);
+            
+            // Генерация сообщений
+            setInterval(() => {
+                if (!isPaused && Math.random() < 0.3) {
+                    const contractor = contractors[Math.floor(Math.random() * contractors.length)];
+                    const types = ['thanks', 'complaint', 'task'];
+                    const type = types[Math.floor(Math.random() * types.length)];
+                    addMessage(generateMessage(type, contractor.name));
+                }
+            }, 15000);
+        };
+
+        // Очистка при закрытии страницы
+        window.onbeforeunload = () => {
+            if (gameInterval) clearInterval(gameInterval);
+            if (renderInterval) clearInterval(renderInterval);
+            if (modalTimerInterval) clearInterval(modalTimerInterval);
         };
     </script>
 </body>
 </html>
-
-
