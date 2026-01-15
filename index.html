@@ -32,10 +32,11 @@
             flex-direction: column;
             padding: 15px 10px;
             position: relative;
-            transition: width 0.3s ease, padding 0.3s ease;
+            transition: width 0.3s ease;
             overflow: hidden;
             white-space: nowrap;
             flex-shrink: 0;
+            z-index: 10;
         }
 
         #sidebar.minimized {
@@ -113,7 +114,7 @@
             padding: 20px;
             overflow-y: auto;
             background: #ffffff;
-            transition: flex 0.3s ease;
+            transition: margin-left 0.3s ease;
         }
 
         .tab-content {
@@ -129,7 +130,7 @@
             text-align: center;
             color: #777;
             font-size: 16px;
-            margin-top: 100px;
+            margin-top: 60px;
         }
 
         /* === СПИСОК ДОКУМЕНТОВ === */
@@ -154,7 +155,14 @@
             border-color: #90caf9;
         }
 
-        .doc-item img {
+        /* Иконка "открыть" слева */
+        .doc-icon-open {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .doc-item img[type="type"] {
             width: 24px;
             height: 24px;
             margin-right: 10px;
@@ -168,6 +176,7 @@
         .doc-contractor {
             flex: 1;
             color: #555;
+            font-size: 14px;
         }
 
         .doc-status {
@@ -276,7 +285,9 @@
                 flex-direction: row;
                 padding: 10px;
                 overflow-x: auto;
-                white-space: nowrap;
+                position: sticky;
+                top: 0;
+                z-index: 1000;
             }
             #sidebar.minimized {
                 width: 100%;
@@ -287,21 +298,22 @@
                 visibility: hidden;
             }
             #content {
-                flex: none;
-                height: calc(100vh - 80px);
+                flex: 1;
+                height: calc(100vh - 100px);
+                margin-top: 10px;
                 padding: 15px;
             }
             #stats-panel {
                 left: 10px;
                 bottom: 10px;
                 font-size: 12px;
+                z-index: 99;
             }
-            #sidebar.minimized ~ #stats-panel,
-            body:has(#sidebar) ~ #stats-panel {
-                left: 10px;
+            .doc-contractor {
+                font-size: 13px;
             }
-            .modal-content {
-                width: 95%;
+            .doc-item {
+                padding: 10px;
             }
         }
     </style>
@@ -323,7 +335,6 @@
             <span class="text">Документы</span>
         </div>
 
-        <!-- Входящие БЕЗ иконки -->
         <div class="menu-item submenu-item active" onclick="openTab('incoming')">
             <span class="text">Входящие <span id="counter" class="counter">0</span></span>
         </div>
@@ -408,6 +419,9 @@
             "Счёт": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sch.png"
         };
 
+        // ✅ Используем РЕАЛЬНЫЙ open.png из репозитория
+        const openIcon = "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/open.png";
+
         const contractors = [
             { name: "ООО Ромашка", errorRate: 0.5 },
             { name: "ИП Иванов", errorRate: 0.3 },
@@ -488,9 +502,10 @@
                 item.className = 'doc-item';
                 item.onclick = () => openDocumentModal(doc);
 
-                // Убрали open.png — только type-иконка
+                // ✅ Добавляем open.png СЛЕВА от типа документа
                 item.innerHTML = `
-                    <img src="${typeIcons[doc.type]}" alt="${doc.type}">
+                    <img src="${openIcon}" class="doc-icon-open" alt="Открыть">
+                    <img src="${typeIcons[doc.type]}" type="type" alt="${doc.type}">
                     <div class="doc-type">${doc.type}</div>
                     <div class="doc-contractor">${doc.contractor}</div>
                     <div class="doc-status">Входящий</div>
@@ -567,7 +582,6 @@
             renderIncoming();
         }
 
-        // Обновление счётчика внизу
         function updateStats() {
             document.getElementById('score').textContent = score;
             document.getElementById('mistakes').textContent = mistakes;
@@ -586,10 +600,11 @@
         }
 
         window.onload = () => {
-            updateStats(); // Инициализируем счётчик
+            updateStats();
             startGame();
-            setInterval(renderIncoming, 1000); // Обновляем таймеры
+            setInterval(renderIncoming, 1000);
         };
     </script>
 </body>
 </html>
+
