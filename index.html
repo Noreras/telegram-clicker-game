@@ -70,7 +70,8 @@
             color: #00BEA2;
         }
 
-        .menu-item img {
+        .menu-item img,
+        .menu-item [icon] {
             width: 20px;
             height: 20px;
             flex-shrink: 0;
@@ -269,16 +270,16 @@
     <!-- ЛЕВАЯ ПАНЕЛЬ -->
     <div id="sidebar">
         <div id="sidebar-header">
-            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/logo.png" alt="Контур Диадок">
+            <img src="https://s.kontur.ru/common-v2/logos/logo-diadoc-24.svg" alt="Контур Диадок">
         </div>
 
         <div class="menu-item" onclick="openTab('new_doc')">
-            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/new_doc.png" alt="Новый">
+            <img src="https://s.kontur.ru/common-v2/icons-ui/black/plus-circle/plus-circle-24-Regular@2x.png" size="24" alt="Новый">
             <span>Новый документ</span>
         </div>
 
         <div class="menu-item" onclick="openTab('documents')">
-            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png" alt="Документы">
+            <img src="https://s.kontur.ru/common-v2/icons-ui/black/doc-text/doc-text-24-Regular@2x.png" size="24" alt="Документы">
             <span>Документы</span>
         </div>
 
@@ -288,17 +289,17 @@
         </div>
 
         <div class="menu-item" onclick="openTab('agents')">
-            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/agents.png" alt="Контрагенты">
+            <img src="https://s.kontur.ru/common-v2/icons-ui/black/people-2/people-2-24-Regular@2x.png" size="24" alt="Контрагенты">
             <span>Контрагенты</span>
         </div>
 
         <div class="menu-item" onclick="openTab('chat')">
-            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/chat.png" alt="Сообщения">
+            <img src="https://s.kontur.ru/common-v2/icons-ui/black/comment-rect-text/comment-rect-text-24-Regular@2x.png" size="24" alt="Сообщения">
             <span>Сообщения</span>
         </div>
 
         <div class="menu-item" onclick="openTab('settings')">
-            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/set.png" alt="Настройки">
+            <img src="https://s.kontur.ru/common-v2/icons-ui/black/settings-gear/settings-gear-24-Regular@2x.png" size="24" alt="Настройки">
             <span>Настройки</span>
         </div>
     </div>
@@ -371,7 +372,7 @@
         };
 
         // Иконка "открыть" слева от типа документа
-        const openIcon = "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/open.png";
+        const openIcon = "https://s.kontur.ru/common-v2/icons-ui/black/doc-arrow-in/doc-arrow-in-24-Regular@2x.png";
 
         const contractors = [
             { name: "ООО Ромашка", errorRate: 0.5 },
@@ -464,10 +465,8 @@
                 item.className = 'doc-item';
                 item.onclick = () => openDocumentModal(doc);
 
-                // ✅ Исправлено: НЕТ дублирования "СФСФ", "АктАкт"
-                // Тип выводится только один раз
                 item.innerHTML = `
-                    <img src="${openIcon}" class="doc-icon-open" alt="Открыть">
+                    <img src="${openIcon}" class="doc-icon-open" alt="Открыть" size="24">
                     <div class="doc-type">${doc.type}</div>
                     <div class="doc-contractor">${doc.contractor}</div>
                     <div class="doc-status">Входящий</div>
@@ -561,9 +560,9 @@
 
         // === Старт ===
         window.onload = () => {
-            updateStats(); // Инициализация счётчика
+            updateStats();
             startGame();
-            setInterval(renderIncoming, 1000); // Обновление таймеров
+            setInterval(renderIncoming, 1000);
         };
     </script>
 </body>
