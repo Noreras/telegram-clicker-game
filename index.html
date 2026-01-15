@@ -39,14 +39,13 @@
         }
 
         #sidebar-header {
-            font-size: 18px;
-            font-weight: 600;
-            color: #00BEA2;
             text-align: center;
-            padding: 10px;
             margin-bottom: 20px;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        }
+
+        #sidebar-header img {
+            height: 28px;
+            width: auto;
         }
 
         .menu-item {
@@ -185,12 +184,6 @@
             margin-right: 10px;
         }
 
-        .doc-item img[type="type"] {
-            width: 24px;
-            height: 24px;
-            margin-right: 10px;
-        }
-
         .doc-type {
             font-weight: 600;
             width: 80px;
@@ -275,7 +268,9 @@
 <body>
     <!-- ЛЕВАЯ ПАНЕЛЬ -->
     <div id="sidebar">
-        <div id="sidebar-header">Контур Диадок</div>
+        <div id="sidebar-header">
+            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/logo.png" alt="Контур Диадок">
+        </div>
 
         <div class="menu-item" onclick="openTab('new_doc')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/new_doc.png" alt="Новый">
@@ -469,6 +464,8 @@
                 item.className = 'doc-item';
                 item.onclick = () => openDocumentModal(doc);
 
+                // ✅ Исправлено: НЕТ дублирования "СФСФ", "АктАкт"
+                // Тип выводится только один раз
                 item.innerHTML = `
                     <img src="${openIcon}" class="doc-icon-open" alt="Открыть">
                     <img src="${typeIcons[doc.type]}" alt="${doc.type}">
@@ -572,3 +569,4 @@
     </script>
 </body>
 </html>
+
