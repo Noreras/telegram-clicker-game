@@ -2,7 +2,6 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Контур Диадок</title>
     <style>
         * {
@@ -16,10 +15,6 @@
             background: #f1f3f5;
             overflow: hidden;
             display: flex;
-            touch-action: pan-y;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            user-select: none;
         }
 
         /* === ЛЕВАЯ ПАНЕЛЬ === */
@@ -35,28 +30,23 @@
             transition: width 0.3s ease, padding 0.3s ease;
             overflow: hidden;
             white-space: nowrap;
-            flex-shrink: 0;
         }
 
+        /* Только иконки */
         #sidebar.minimized {
             width: 80px;
             padding: 20px 20px;
         }
 
         #sidebar-header {
+            font-size: 18px;
+            font-weight: 600;
+            color: #00BEA2;
             text-align: center;
             padding: 10px;
             margin-bottom: 20px;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        /* Разные цвета для "Контур" и "Диадок" */
-        #sidebar-header span {
-            color: black;
-        }
-        #sidebar-header .accent {
-            color: #00BEA2;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .menu-item {
@@ -68,6 +58,7 @@
             cursor: pointer;
             color: #333;
             gap: 12px;
+            position: relative;
         }
 
         .menu-item:hover {
@@ -86,12 +77,12 @@
             flex-shrink: 0;
         }
 
-        .menu-item span.text {
+        .menu-item span {
             transition: opacity 0.3s ease;
             opacity: 1;
         }
 
-        #sidebar.minimized .menu-item span.text {
+        #sidebar.minimized .menu-item span {
             opacity: 0;
             visibility: hidden;
         }
@@ -113,13 +104,17 @@
             text-align: center;
         }
 
-        /* === РАБОЧАЯ ОБЛАСТЬ === */
+        /* === РАБОЧАЯ ОБЛАСТЬ (адаптивная ширина) === */
         #content {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
             background: #ffffff;
             transition: flex 0.3s ease;
+        }
+
+        #sidebar.minimized ~ #content {
+            flex: calc(100vw - 80px);
         }
 
         /* === ОТСТУП ДЛЯ ПЛАВНОГО ПЕРЕХОДА === */
@@ -205,8 +200,7 @@
 
         .modal-content {
             background: white;
-            width: 90%;
-            max-width: 400px;
+            width: 400px;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
@@ -247,84 +241,53 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-
-        /* === МОБИЛЬНАЯ АДАПТАЦИЯ === */
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-            #sidebar {
-                width: 100%;
-                height: auto;
-                flex-direction: row;
-                padding: 10px;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-            #sidebar.minimized {
-                width: 100%;
-                padding: 10px;
-            }
-            #sidebar.minimized .menu-item span.text {
-                opacity: 0;
-                visibility: hidden;
-            }
-            #content {
-                flex: none;
-                height: calc(100vh - 80px);
-                padding: 15px;
-            }
-            .modal-content {
-                width: 95%;
-            }
-        }
     </style>
 </head>
 <body>
     <!-- ЛЕВАЯ ПАНЕЛЬ -->
     <div id="sidebar">
-        <div id="sidebar-header">
-            <span>Контур</span><span class="accent"> Диадок</span>
-        </div>
+        <div id="sidebar-header">Контур Диадок</div>
 
         <div class="menu-item" onclick="openTab('new_doc')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/new_doc.png" alt="Новый">
-            <span class="text">Новый документ</span>
+            <span>Новый документ</span>
         </div>
 
         <div class="menu-item" onclick="openTab('documents')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png" alt="Документы">
-            <span class="text">Документы</span>
+            <span>Документы</span>
         </div>
 
-        <!-- Входящие БЕЗ иконки -->
         <div class="menu-item submenu-item active" onclick="openTab('incoming')">
-            <span class="text">Входящие <span id="counter" class="counter">0</span></span>
+            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png" alt="Входящие">
+            <span>Входящие <span id="counter" class="counter">0</span></span>
         </div>
 
         <div class="menu-item" onclick="openTab('agents')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/agents.png" alt="Контрагенты">
-            <span class="text">Контрагенты</span>
+            <span>Контрагенты</span>
         </div>
 
         <div class="menu-item" onclick="openTab('chat')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/chat.png" alt="Сообщения">
-            <span class="text">Сообщения</span>
+            <span>Сообщения</span>
         </div>
 
         <div class="menu-item" onclick="openTab('settings')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/set.png" alt="Настройки">
-            <span class="text">Настройки</span>
+            <span>Настройки</span>
         </div>
     </div>
 
     <!-- РАБОЧАЯ ОБЛАСТЬ -->
     <div id="content">
+        <!-- Вкладка: Входящие -->
         <div id="incoming" class="tab-content active">
             <h2>Входящие документы</h2>
             <div class="doc-list" id="doc-list"></div>
         </div>
 
+        <!-- Заглушки -->
         <div id="new_doc" class="tab-content">
             <div class="placeholder">В разработке</div>
         </div>
@@ -362,12 +325,14 @@
     </div>
 
     <script>
+        // === Глобальные переменные ===
         let incomingDocuments = [];
         let score = 0;
         let mistakes = 0;
         let isPaused = false;
         let gameInterval;
 
+        // === Иконки типов документов ===
         const typeIcons = {
             "УПД": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/upd.png",
             "СФ": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sf.png",
@@ -382,6 +347,7 @@
             { name: "Новый партнёр", errorRate: 0.7 }
         ];
 
+        // === Старт игры ===
         function startGame() {
             if (gameInterval) clearInterval(gameInterval);
             gameInterval = setInterval(() => {
@@ -391,12 +357,13 @@
             }, 3000);
         }
 
+        // === Добавить документ ===
         function addDocument() {
             const type = ["УПД", "СФ", "Акт", "Счёт"][Math.floor(Math.random() * 4)];
             const contractor = contractors[Math.floor(Math.random() * contractors.length)];
             const valid = Math.random() > contractor.errorRate;
             const baseTime = contractor.name === "ИП Иванов" ? 16000 : 24000;
-            const ttl = baseTime + 10000;
+            const ttl = baseTime + 10000; // +10 сек
 
             incomingDocuments.push({
                 id: Date.now(),
@@ -412,18 +379,23 @@
             renderIncoming();
         }
 
+        // === Обновить счётчик ===
         function updateCounter() {
             const count = incomingDocuments.length;
             document.getElementById('counter').textContent = count;
         }
 
+        // === Открыть вкладку ===
         function openTab(tabId) {
+            // Сброс активных классов
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
 
+            // Открываем нужную вкладку
             const tab = document.getElementById(tabId);
             if (tab) tab.classList.add('active');
 
+            // Активируем пункт меню
             if (tabId === 'incoming') {
                 document.querySelector('.submenu-item').classList.add('active');
                 document.getElementById('sidebar').classList.add('minimized');
@@ -432,9 +404,11 @@
                 document.querySelector(`[onclick="openTab('${tabId}')"]`)?.classList.add('active');
             }
 
+            // Пауза
             isPaused = tabId !== 'incoming';
         }
 
+        // === Отрисовка списка ===
         function renderIncoming() {
             const list = document.getElementById('doc-list');
             list.innerHTML = '';
@@ -465,6 +439,7 @@
             });
         }
 
+        // === Модальное окно ===
         function openDocumentModal(doc) {
             document.getElementById('modal').style.display = 'flex';
             document.getElementById('modal-title').textContent = doc.type;
@@ -523,12 +498,14 @@
             }
         }
 
+        // === Удалить документ ===
         function removeDocument(id) {
             incomingDocuments = incomingDocuments.filter(d => d.id !== id);
             updateCounter();
             renderIncoming();
         }
 
+        // === Уведомление ===
         function showNotification(text) {
             const n = document.createElement('div');
             n.style.cssText = `
@@ -541,6 +518,7 @@
             setTimeout(() => n.remove(), 2000);
         }
 
+        // === Старт ===
         window.onload = () => {
             startGame();
             setInterval(renderIncoming, 1000);
