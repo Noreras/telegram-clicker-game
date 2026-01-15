@@ -27,15 +27,25 @@
             flex-direction: column;
             padding: 20px 10px;
             position: relative;
+            transition: transform 0.3s ease;
+            z-index: 100;
         }
+
+        /* Состояние: скрыто (только иконки + заголовок) */
+        #sidebar.minimized {
+            transform: translateX(-160px); /* Скрываем текст */
+        }
+
         #sidebar-header {
             font-size: 18px;
             font-weight: 600;
-            color: #1a1a1a;
+            color: #00BEA2;
             text-align: center;
             padding: 10px;
             margin-bottom: 20px;
+            transition: color 0.3s;
         }
+
         .menu-item {
             display: flex;
             align-items: center;
@@ -46,36 +56,41 @@
             font-size: 15px;
             color: #333;
             gap: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+
         .menu-item:hover {
             background: #f5f5f5;
         }
+
         .menu-item.active {
-            background: #e3f2fd;
+            background: #e0f7fa;
             font-weight: 600;
-            color: #1976d2;
+            color: #00BEA2;
         }
+
         .menu-item img {
             width: 20px;
             height: 20px;
         }
+
         .submenu-item {
             padding-left: 40px;
             font-size: 14px;
-            color: #555;
+            color: #00BEA2;
         }
+
         .counter {
             margin-left: auto;
-            background: #d32f2f;
+            background: #00BEA2;
             color: white;
             font-size: 12px;
             padding: 2px 6px;
             border-radius: 10px;
             min-width: 18px;
             text-align: center;
-        }
-        .counter.empty {
-            background: #ccc;
         }
 
         /* === РАБОЧАЯ ОБЛАСТЬ === */
@@ -85,13 +100,16 @@
             overflow-y: auto;
             background: #ffffff;
         }
+
         .tab-content {
             display: none;
             height: 100%;
         }
+
         .tab-content.active {
             display: block;
         }
+
         .placeholder {
             text-align: center;
             color: #777;
@@ -105,6 +123,7 @@
             flex-direction: column;
             gap: 8px;
         }
+
         .doc-item {
             display: flex;
             align-items: center;
@@ -114,28 +133,34 @@
             background: #f9f9f9;
             cursor: pointer;
         }
+
         .doc-item:hover {
             background: #f0f8ff;
             border-color: #90caf9;
         }
+
         .doc-item img {
             width: 24px;
             height: 24px;
             margin-right: 10px;
         }
+
         .doc-type {
             font-weight: 600;
             width: 80px;
         }
+
         .doc-contractor {
             flex: 1;
             color: #555;
         }
+
         .doc-status {
             color: #1976d2;
             font-size: 13px;
             margin-right: 10px;
         }
+
         .doc-timer {
             font-size: 13px;
             color: #d32f2f;
@@ -155,6 +180,7 @@
             align-items: center;
             z-index: 1000;
         }
+
         .modal-content {
             background: white;
             width: 400px;
@@ -162,21 +188,25 @@
             padding: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
+
         .modal-title {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 10px;
         }
+
         .modal-row {
             margin-bottom: 10px;
             font-size: 14px;
             color: #555;
         }
+
         .btn-group {
             display: flex;
             gap: 10px;
             margin-top: 20px;
         }
+
         .btn {
             flex: 1;
             padding: 10px;
@@ -186,7 +216,8 @@
             font-size: 14px;
             font-weight: 500;
         }
-        .btn-primary { background: #1976d2; color: white; }
+
+        .btn-primary { background: #00BEA2; color: white; }
         .btn-danger { background: #d32f2f; color: white; }
         .btn-warning { background: #f57c00; color: white; }
         .btn:disabled {
@@ -211,7 +242,7 @@
         </div>
 
         <div class="menu-item submenu-item active" onclick="openTab('incoming')">
-            Входящие <span id="counter" class="counter empty">0</span>
+            Входящие <span id="counter" class="counter">0</span>
         </div>
 
         <div class="menu-item" onclick="showNotification('В разработке')">
@@ -295,7 +326,11 @@
         function startGame() {
             if (gameInterval) clearInterval(gameInterval);
             gameInterval = setInterval(() => {
-                if (!isPaused) addDocument();
+                if (!isPaused && incomingDocuments.length < 15) {
+                    addDocument();
+                } else if (incomingDocuments.length >= 15) {
+                    showNotification("⚠️ Слишком много документов — обработайте входящие!");
+                }
             }, 3000);
         }
 
@@ -304,7 +339,10 @@
             const type = ["УПД", "СФ", "Акт", "Счёт"][Math.floor(Math.random() * 4)];
             const contractor = contractors[Math.floor(Math.random() * contractors.length)];
             const valid = Math.random() > contractor.errorRate;
-            const ttl = contractor.name === "ИП Иванов" ? 16000 : 24000;
+
+            // Увеличено на 10 секунд
+            const baseTime = contractor.name === "ИП Иванов" ? 16000 : 24000;
+            const ttl = baseTime + 10000; // +10 сек
 
             const doc = {
                 id: Date.now(),
@@ -326,7 +364,6 @@
             const count = incomingDocuments.length;
             const counter = document.getElementById('counter');
             counter.textContent = count;
-            counter.className = count > 0 ? 'counter' : 'counter empty';
         }
 
         // === Открыть вкладку ===
@@ -337,14 +374,18 @@
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
             if (tabId === 'incoming') {
                 document.querySelector('.submenu-item').classList.add('active');
+                document.getElementById('sidebar').classList.add('minimized');
             } else {
+                document.getElementById('sidebar').classList.remove('minimized');
                 document.querySelector(`.menu-item[onclick="openTab('${tabId}')"]`)?.classList.add('active');
             }
 
             if (tabId === 'settings') {
                 isPaused = true;
-            } else if (document.querySelector('.submenu-item.active')) {
+            } else if (tabId === 'incoming') {
                 isPaused = false;
+            } else {
+                isPaused = true;
             }
         }
 
@@ -356,6 +397,13 @@
             incomingDocuments.forEach(doc => {
                 const elapsed = Date.now() - doc.startTime;
                 const timeLeft = Math.max(0, Math.ceil((doc.ttl - elapsed) / 1000));
+
+                if (timeLeft <= 0) {
+                    removeDocument(doc.id);
+                    showNotification('⚠️ Документ просрочен и удалён!');
+                    mistakes += 2;
+                    return;
+                }
 
                 const item = document.createElement('div');
                 item.className = 'doc-item';
@@ -453,7 +501,7 @@
             const n = document.createElement('div');
             n.style.cssText = `
                 position: fixed; top: 20px; right: 20px;
-                background: #1976d2; color: white; padding: 12px 16px;
+                background: #00BEA2; color: white; padding: 12px 16px;
                 border-radius: 6px; z-index: 1000; font-size: 14px;
             `;
             n.textContent = text;
@@ -464,7 +512,7 @@
         // === Старт ===
         window.onload = () => {
             startGame();
-            setInterval(renderIncoming, 1000); // Обновляем таймеры
+            setInterval(renderIncoming, 1000); // Обновляем таймеры и удаляем просроченные
         };
     </script>
 </body>
