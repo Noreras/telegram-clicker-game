@@ -22,20 +22,25 @@
             user-select: none;
         }
 
-        /* === ЛЕВАЯ ПАНЕЛЬ (всегда видима, не сжимается на мобилах) === */
+        /* === ЛЕВАЯ ПАНЕЛЬ === */
         #sidebar {
             width: 240px;
-            min-width: 240px;
-            height: 100vh;
+            height: 100%;
             background: #ffffff;
             border-right: 1px solid #e0e0e0;
             display: flex;
             flex-direction: column;
             padding: 15px 10px;
             position: relative;
-            z-index: 100;
+            transition: width 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+            white-space: nowrap;
             flex-shrink: 0;
-            overflow-y: auto;
+        }
+
+        #sidebar.minimized {
+            width: 80px;
+            padding: 15px 20px;
         }
 
         #sidebar-header {
@@ -57,7 +62,6 @@
             cursor: pointer;
             color: #333;
             gap: 12px;
-            white-space: nowrap;
         }
 
         .menu-item:hover {
@@ -74,6 +78,16 @@
             width: 20px;
             height: 20px;
             flex-shrink: 0;
+        }
+
+        .menu-item span.text {
+            transition: opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        #sidebar.minimized .menu-item span.text {
+            opacity: 0;
+            visibility: hidden;
         }
 
         .submenu-item {
@@ -99,6 +113,7 @@
             padding: 20px;
             overflow-y: auto;
             background: #ffffff;
+            transition: flex 0.3s ease;
         }
 
         .tab-content {
@@ -114,7 +129,7 @@
             text-align: center;
             color: #777;
             font-size: 16px;
-            margin-top: 60px;
+            margin-top: 100px;
         }
 
         /* === СПИСОК ДОКУМЕНТОВ === */
@@ -139,13 +154,7 @@
             border-color: #90caf9;
         }
 
-        .doc-icon-open {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-        }
-
-        .doc-item img[type="type"] {
+        .doc-item img {
             width: 24px;
             height: 24px;
             margin-right: 10px;
@@ -159,7 +168,6 @@
         .doc-contractor {
             flex: 1;
             color: #555;
-            font-size: 14px;
         }
 
         .doc-status {
@@ -185,6 +193,17 @@
             border-radius: 8px;
             font-size: 13px;
             z-index: 100;
+            white-space: nowrap;
+            transition: left 0.3s ease;
+        }
+
+        #sidebar.minimized ~ #stats-panel {
+            left: 100px;
+        }
+
+        #stats-panel .value {
+            font-weight: bold;
+            color: #00BEA2;
         }
 
         /* === МОДАЛЬНОЕ ОКНО === */
@@ -249,33 +268,6 @@
         /* === МОБИЛЬНАЯ АДАПТАЦИЯ === */
         @media (max-width: 768px) {
             body {
-                flex-direction: row; /* Слева меню, справа контент */
-                overflow: visible;
-            }
-            #sidebar {
-                width: 240px;
-                min-width: 240px;
-                height: 100vh;
-                overflow-y: auto;
-                position: fixed;
-                top: 0;
-                left: 0;
-                z-index: 1000;
-            }
-            #content {
-                flex: 1;
-                margin-left: 240px;
-                height: 100vh;
-                overflow-y: auto;
-                padding: 20px;
-            }
-            #stats-panel {
-                left: 260px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            body {
                 flex-direction: column;
             }
             #sidebar {
@@ -283,25 +275,19 @@
                 height: auto;
                 flex-direction: row;
                 padding: 10px;
-                position: sticky;
-                top: 0;
                 overflow-x: auto;
                 white-space: nowrap;
-                z-index: 1000;
             }
-            #sidebar-header {
-                display: none;
-            }
-            #sidebar .menu-item {
+            #sidebar.minimized {
+                width: 100%;
                 padding: 10px;
-                font-size: 12px;
             }
-            #sidebar img {
-                width: 18px;
-                height: 18px;
+            #sidebar.minimized .menu-item span.text {
+                opacity: 0;
+                visibility: hidden;
             }
             #content {
-                margin-left: 0;
+                flex: none;
                 height: calc(100vh - 80px);
                 padding: 15px;
             }
@@ -309,6 +295,13 @@
                 left: 10px;
                 bottom: 10px;
                 font-size: 12px;
+            }
+            #sidebar.minimized ~ #stats-panel,
+            body:has(#sidebar) ~ #stats-panel {
+                left: 10px;
+            }
+            .modal-content {
+                width: 95%;
             }
         }
     </style>
@@ -322,35 +315,36 @@
 
         <div class="menu-item" onclick="openTab('new_doc')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/new_doc.png" alt="Новый">
-            <span>Новый документ</span>
+            <span class="text">Новый документ</span>
         </div>
 
         <div class="menu-item" onclick="openTab('documents')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png" alt="Документы">
-            <span>Документы</span>
+            <span class="text">Документы</span>
         </div>
 
+        <!-- Входящие БЕЗ иконки -->
         <div class="menu-item submenu-item active" onclick="openTab('incoming')">
-            <span>Входящие <span id="counter" class="counter">0</span></span>
+            <span class="text">Входящие <span id="counter" class="counter">0</span></span>
         </div>
 
         <div class="menu-item" onclick="openTab('agents')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/agents.png" alt="Контрагенты">
-            <span>Контрагенты</span>
+            <span class="text">Контрагенты</span>
         </div>
 
         <div class="menu-item" onclick="openTab('chat')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/chat.png" alt="Сообщения">
-            <span>Сообщения</span>
+            <span class="text">Сообщения</span>
         </div>
 
         <div class="menu-item" onclick="openTab('settings')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/set.png" alt="Настройки">
-            <span>Настройки</span>
+            <span class="text">Настройки</span>
         </div>
     </div>
 
-    <!-- СЧЁТЧИК В ЛЕВОМ НИЖНЕМ УГЛУ -->
+    <!-- СЧЁТЧИК В НИЖНЕМ ЛЕВОМ УГЛУ -->
     <div id="stats-panel">
         Очки: <span class="value" id="score">0</span> | 
         Ошибки: <span class="value" id="mistakes">0</span>
@@ -406,15 +400,13 @@
         let isPaused = false;
         let gameInterval;
 
+        // Иконки для типов документов
         const typeIcons = {
             "УПД": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/upd.png",
             "СФ": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sf.png",
             "Акт": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/akt.png",
             "Счёт": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sch.png"
         };
-
-        // Иконка "открыть" — теперь исправлена
-        const openIcon = "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/open.png";
 
         const contractors = [
             { name: "ООО Ромашка", errorRate: 0.5 },
@@ -467,7 +459,9 @@
 
             if (tabId === 'incoming') {
                 document.querySelector('.submenu-item').classList.add('active');
+                document.getElementById('sidebar').classList.add('minimized');
             } else {
+                document.getElementById('sidebar').classList.remove('minimized');
                 document.querySelector(`[onclick="openTab('${tabId}')"]`)?.classList.add('active');
             }
 
@@ -494,9 +488,8 @@
                 item.className = 'doc-item';
                 item.onclick = () => openDocumentModal(doc);
 
-                // ✅ Без type="type", только корректный img
+                // Убрали open.png — только type-иконка
                 item.innerHTML = `
-                    <img src="${openIcon}" class="doc-icon-open" alt="Открыть">
                     <img src="${typeIcons[doc.type]}" alt="${doc.type}">
                     <div class="doc-type">${doc.type}</div>
                     <div class="doc-contractor">${doc.contractor}</div>
@@ -574,6 +567,7 @@
             renderIncoming();
         }
 
+        // Обновление счётчика внизу
         function updateStats() {
             document.getElementById('score').textContent = score;
             document.getElementById('mistakes').textContent = mistakes;
@@ -592,12 +586,11 @@
         }
 
         window.onload = () => {
-            updateStats();
+            updateStats(); // Инициализируем счётчик
             startGame();
-            setInterval(renderIncoming, 1000);
+            setInterval(renderIncoming, 1000); // Обновляем таймеры
         };
     </script>
 </body>
 </html>
-
 
