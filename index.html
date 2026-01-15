@@ -22,26 +22,20 @@
             user-select: none;
         }
 
-        /* === ЛЕВАЯ ПАНЕЛЬ === */
+        /* === ЛЕВАЯ ПАНЕЛЬ (всегда видима, не сжимается на мобилах) === */
         #sidebar {
             width: 240px;
-            height: 100%;
+            min-width: 240px;
+            height: 100vh;
             background: #ffffff;
             border-right: 1px solid #e0e0e0;
             display: flex;
             flex-direction: column;
             padding: 15px 10px;
             position: relative;
-            transition: width 0.3s ease;
-            overflow: hidden;
-            white-space: nowrap;
+            z-index: 100;
             flex-shrink: 0;
-            z-index: 10;
-        }
-
-        #sidebar.minimized {
-            width: 80px;
-            padding: 15px 20px;
+            overflow-y: auto;
         }
 
         #sidebar-header {
@@ -63,6 +57,7 @@
             cursor: pointer;
             color: #333;
             gap: 12px;
+            white-space: nowrap;
         }
 
         .menu-item:hover {
@@ -79,16 +74,6 @@
             width: 20px;
             height: 20px;
             flex-shrink: 0;
-        }
-
-        .menu-item span.text {
-            transition: opacity 0.3s ease;
-            opacity: 1;
-        }
-
-        #sidebar.minimized .menu-item span.text {
-            opacity: 0;
-            visibility: hidden;
         }
 
         .submenu-item {
@@ -114,7 +99,6 @@
             padding: 20px;
             overflow-y: auto;
             background: #ffffff;
-            transition: margin-left 0.3s ease;
         }
 
         .tab-content {
@@ -155,7 +139,6 @@
             border-color: #90caf9;
         }
 
-        /* Иконка "открыть" слева */
         .doc-icon-open {
             width: 20px;
             height: 20px;
@@ -202,17 +185,6 @@
             border-radius: 8px;
             font-size: 13px;
             z-index: 100;
-            white-space: nowrap;
-            transition: left 0.3s ease;
-        }
-
-        #sidebar.minimized ~ #stats-panel {
-            left: 100px;
-        }
-
-        #stats-panel .value {
-            font-weight: bold;
-            color: #00BEA2;
         }
 
         /* === МОДАЛЬНОЕ ОКНО === */
@@ -277,6 +249,33 @@
         /* === МОБИЛЬНАЯ АДАПТАЦИЯ === */
         @media (max-width: 768px) {
             body {
+                flex-direction: row; /* Слева меню, справа контент */
+                overflow: visible;
+            }
+            #sidebar {
+                width: 240px;
+                min-width: 240px;
+                height: 100vh;
+                overflow-y: auto;
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 1000;
+            }
+            #content {
+                flex: 1;
+                margin-left: 240px;
+                height: 100vh;
+                overflow-y: auto;
+                padding: 20px;
+            }
+            #stats-panel {
+                left: 260px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
                 flex-direction: column;
             }
             #sidebar {
@@ -284,36 +283,32 @@
                 height: auto;
                 flex-direction: row;
                 padding: 10px;
-                overflow-x: auto;
                 position: sticky;
                 top: 0;
+                overflow-x: auto;
+                white-space: nowrap;
                 z-index: 1000;
             }
-            #sidebar.minimized {
-                width: 100%;
-                padding: 10px;
+            #sidebar-header {
+                display: none;
             }
-            #sidebar.minimized .menu-item span.text {
-                opacity: 0;
-                visibility: hidden;
+            #sidebar .menu-item {
+                padding: 10px;
+                font-size: 12px;
+            }
+            #sidebar img {
+                width: 18px;
+                height: 18px;
             }
             #content {
-                flex: 1;
-                height: calc(100vh - 100px);
-                margin-top: 10px;
+                margin-left: 0;
+                height: calc(100vh - 80px);
                 padding: 15px;
             }
             #stats-panel {
                 left: 10px;
                 bottom: 10px;
                 font-size: 12px;
-                z-index: 99;
-            }
-            .doc-contractor {
-                font-size: 13px;
-            }
-            .doc-item {
-                padding: 10px;
             }
         }
     </style>
@@ -327,35 +322,35 @@
 
         <div class="menu-item" onclick="openTab('new_doc')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/new_doc.png" alt="Новый">
-            <span class="text">Новый документ</span>
+            <span>Новый документ</span>
         </div>
 
         <div class="menu-item" onclick="openTab('documents')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png" alt="Документы">
-            <span class="text">Документы</span>
+            <span>Документы</span>
         </div>
 
         <div class="menu-item submenu-item active" onclick="openTab('incoming')">
-            <span class="text">Входящие <span id="counter" class="counter">0</span></span>
+            <span>Входящие <span id="counter" class="counter">0</span></span>
         </div>
 
         <div class="menu-item" onclick="openTab('agents')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/agents.png" alt="Контрагенты">
-            <span class="text">Контрагенты</span>
+            <span>Контрагенты</span>
         </div>
 
         <div class="menu-item" onclick="openTab('chat')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/chat.png" alt="Сообщения">
-            <span class="text">Сообщения</span>
+            <span>Сообщения</span>
         </div>
 
         <div class="menu-item" onclick="openTab('settings')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/set.png" alt="Настройки">
-            <span class="text">Настройки</span>
+            <span>Настройки</span>
         </div>
     </div>
 
-    <!-- СЧЁТЧИК В НИЖНЕМ ЛЕВОМ УГЛУ -->
+    <!-- СЧЁТЧИК В ЛЕВОМ НИЖНЕМ УГЛУ -->
     <div id="stats-panel">
         Очки: <span class="value" id="score">0</span> | 
         Ошибки: <span class="value" id="mistakes">0</span>
@@ -411,7 +406,6 @@
         let isPaused = false;
         let gameInterval;
 
-        // Иконки для типов документов
         const typeIcons = {
             "УПД": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/upd.png",
             "СФ": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sf.png",
@@ -419,7 +413,7 @@
             "Счёт": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sch.png"
         };
 
-        // ✅ Используем РЕАЛЬНЫЙ open.png из репозитория
+        // Иконка "открыть" — теперь исправлена
         const openIcon = "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/open.png";
 
         const contractors = [
@@ -473,9 +467,7 @@
 
             if (tabId === 'incoming') {
                 document.querySelector('.submenu-item').classList.add('active');
-                document.getElementById('sidebar').classList.add('minimized');
             } else {
-                document.getElementById('sidebar').classList.remove('minimized');
                 document.querySelector(`[onclick="openTab('${tabId}')"]`)?.classList.add('active');
             }
 
@@ -502,9 +494,10 @@
                 item.className = 'doc-item';
                 item.onclick = () => openDocumentModal(doc);
 
-                // ✅ Добавляем open.png СЛЕВА от типа документа
+                // ✅ Без type="type", только корректный img
                 item.innerHTML = `
                     <img src="${openIcon}" class="doc-icon-open" alt="Открыть">
+                    <img src="${typeIcons[doc.type]}" alt="${doc.type}">
                     <div class="doc-type">${doc.type}</div>
                     <div class="doc-contractor">${doc.contractor}</div>
                     <div class="doc-status">Входящий</div>
@@ -606,8 +599,5 @@
     </script>
 </body>
 </html>
-
-
-
 
 
