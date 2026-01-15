@@ -11,13 +11,13 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         body {
-            display: flex;
             height: 100vh;
             background: #f1f3f5;
             overflow: hidden;
+            display: flex;
         }
 
-        /* === ЛЕВАЯ ПАНЕЛЬ (меню) === */
+        /* === ЛЕВАЯ ПАНЕЛЬ === */
         #sidebar {
             width: 240px;
             height: 100%;
@@ -27,13 +27,15 @@
             flex-direction: column;
             padding: 20px 10px;
             position: relative;
-            transition: transform 0.3s ease;
-            z-index: 100;
+            transition: width 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+            white-space: nowrap;
         }
 
-        /* Состояние: скрыто (только иконки + заголовок) */
+        /* Только иконки */
         #sidebar.minimized {
-            transform: translateX(-160px); /* Скрываем текст */
+            width: 80px;
+            padding: 20px 20px;
         }
 
         #sidebar-header {
@@ -43,7 +45,8 @@
             text-align: center;
             padding: 10px;
             margin-bottom: 20px;
-            transition: color 0.3s;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .menu-item {
@@ -53,12 +56,9 @@
             margin: 4px 6px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 15px;
             color: #333;
-            gap: 10px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            gap: 12px;
+            position: relative;
         }
 
         .menu-item:hover {
@@ -74,6 +74,17 @@
         .menu-item img {
             width: 20px;
             height: 20px;
+            flex-shrink: 0;
+        }
+
+        .menu-item span {
+            transition: opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        #sidebar.minimized .menu-item span {
+            opacity: 0;
+            visibility: hidden;
         }
 
         .submenu-item {
@@ -93,14 +104,20 @@
             text-align: center;
         }
 
-        /* === РАБОЧАЯ ОБЛАСТЬ === */
+        /* === РАБОЧАЯ ОБЛАСТЬ (адаптивная ширина) === */
         #content {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
             background: #ffffff;
+            transition: flex 0.3s ease;
         }
 
+        #sidebar.minimized ~ #content {
+            flex: calc(100vw - 80px);
+        }
+
+        /* === ОТСТУП ДЛЯ ПЛАВНОГО ПЕРЕХОДА === */
         .tab-content {
             display: none;
             height: 100%;
@@ -231,33 +248,34 @@
     <div id="sidebar">
         <div id="sidebar-header">Контур Диадок</div>
 
-        <div class="menu-item" onclick="showNotification('В разработке')">
+        <div class="menu-item" onclick="openTab('new_doc')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/new_doc.png" alt="Новый">
-            Новый документ
+            <span>Новый документ</span>
         </div>
 
         <div class="menu-item" onclick="openTab('documents')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png" alt="Документы">
-            Документы
+            <span>Документы</span>
         </div>
 
         <div class="menu-item submenu-item active" onclick="openTab('incoming')">
-            Входящие <span id="counter" class="counter">0</span>
+            <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/doc.png" alt="Входящие">
+            <span>Входящие <span id="counter" class="counter">0</span></span>
         </div>
 
-        <div class="menu-item" onclick="showNotification('В разработке')">
+        <div class="menu-item" onclick="openTab('agents')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/agents.png" alt="Контрагенты">
-            Контрагенты
+            <span>Контрагенты</span>
         </div>
 
-        <div class="menu-item" onclick="showNotification('В разработке')">
+        <div class="menu-item" onclick="openTab('chat')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/chat.png" alt="Сообщения">
-            Сообщения
+            <span>Сообщения</span>
         </div>
 
         <div class="menu-item" onclick="openTab('settings')">
             <img src="https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/set.png" alt="Настройки">
-            Настройки
+            <span>Настройки</span>
         </div>
     </div>
 
@@ -269,17 +287,24 @@
             <div class="doc-list" id="doc-list"></div>
         </div>
 
-        <!-- Вкладка: Настройки -->
+        <!-- Заглушки -->
+        <div id="new_doc" class="tab-content">
+            <div class="placeholder">В разработке</div>
+        </div>
+        <div id="documents" class="tab-content">
+            <div class="placeholder">Выберите подраздел</div>
+        </div>
+        <div id="agents" class="tab-content">
+            <div class="placeholder">В разработке</div>
+        </div>
+        <div id="chat" class="tab-content">
+            <div class="placeholder">В разработке</div>
+        </div>
         <div id="settings" class="tab-content">
             <div class="placeholder">
                 <h3>Игра на паузе</h3>
                 <p>Настройки в разработке</p>
             </div>
-        </div>
-
-        <!-- Заглушки -->
-        <div id="documents" class="tab-content">
-            <div class="placeholder">Выберите подраздел</div>
         </div>
     </div>
 
@@ -307,7 +332,7 @@
         let isPaused = false;
         let gameInterval;
 
-        // === Типы иконок ===
+        // === Иконки типов документов ===
         const typeIcons = {
             "УПД": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/upd.png",
             "СФ": "https://raw.githubusercontent.com/Noreras/telegram-clicker-game/main/assets/textures/sf.png",
@@ -322,14 +347,12 @@
             { name: "Новый партнёр", errorRate: 0.7 }
         ];
 
-        // === Запуск игры ===
+        // === Старт игры ===
         function startGame() {
             if (gameInterval) clearInterval(gameInterval);
             gameInterval = setInterval(() => {
                 if (!isPaused && incomingDocuments.length < 15) {
                     addDocument();
-                } else if (incomingDocuments.length >= 15) {
-                    showNotification("⚠️ Слишком много документов — обработайте входящие!");
                 }
             }, 3000);
         }
@@ -339,12 +362,10 @@
             const type = ["УПД", "СФ", "Акт", "Счёт"][Math.floor(Math.random() * 4)];
             const contractor = contractors[Math.floor(Math.random() * contractors.length)];
             const valid = Math.random() > contractor.errorRate;
-
-            // Увеличено на 10 секунд
             const baseTime = contractor.name === "ИП Иванов" ? 16000 : 24000;
             const ttl = baseTime + 10000; // +10 сек
 
-            const doc = {
+            incomingDocuments.push({
                 id: Date.now(),
                 type,
                 contractor: contractor.name,
@@ -352,9 +373,8 @@
                 status: "incoming",
                 ttl,
                 startTime: Date.now()
-            };
+            });
 
-            incomingDocuments.push(doc);
             updateCounter();
             renderIncoming();
         }
@@ -362,31 +382,30 @@
         // === Обновить счётчик ===
         function updateCounter() {
             const count = incomingDocuments.length;
-            const counter = document.getElementById('counter');
-            counter.textContent = count;
+            document.getElementById('counter').textContent = count;
         }
 
         // === Открыть вкладку ===
         function openTab(tabId) {
+            // Сброс активных классов
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+
+            // Открываем нужную вкладку
+            const tab = document.getElementById(tabId);
+            if (tab) tab.classList.add('active');
+
+            // Активируем пункт меню
             if (tabId === 'incoming') {
                 document.querySelector('.submenu-item').classList.add('active');
                 document.getElementById('sidebar').classList.add('minimized');
             } else {
                 document.getElementById('sidebar').classList.remove('minimized');
-                document.querySelector(`.menu-item[onclick="openTab('${tabId}')"]`)?.classList.add('active');
+                document.querySelector(`[onclick="openTab('${tabId}')"]`)?.classList.add('active');
             }
 
-            if (tabId === 'settings') {
-                isPaused = true;
-            } else if (tabId === 'incoming') {
-                isPaused = false;
-            } else {
-                isPaused = true;
-            }
+            // Пауза
+            isPaused = tabId !== 'incoming';
         }
 
         // === Отрисовка списка ===
@@ -427,9 +446,6 @@
             document.getElementById('modal-contractor').textContent = doc.contractor;
 
             const timerEl = document.getElementById('modal-timer');
-            const signBtn = document.getElementById('btn-sign');
-
-            // Обновление таймера
             const updateTimer = () => {
                 const elapsed = Date.now() - doc.startTime;
                 const timeLeft = Math.max(0, Math.ceil((doc.ttl - elapsed) / 1000));
@@ -440,14 +456,12 @@
                     removeDocument(doc.id);
                     showNotification('⚠️ Документ просрочен и удалён!');
                     mistakes += 2;
-                    return;
                 }
             };
 
             const timerInterval = setInterval(updateTimer, 1000);
             updateTimer();
 
-            // Кнопки
             document.getElementById('btn-sign').onclick = () => {
                 if (doc.type === 'Счёт') {
                     showNotification('🚫 Счёт нельзя подписывать');
@@ -475,12 +489,7 @@
                 showNotification('📝 На исправлении');
                 closeDocumentModal();
                 removeDocument(doc.id);
-
-                setTimeout(() => {
-                    if (Math.random() > 0.3) {
-                        addDocument(); // может стать валидным
-                    }
-                }, 3000);
+                setTimeout(addDocument, 3000);
             };
 
             function closeDocumentModal() {
@@ -512,7 +521,7 @@
         // === Старт ===
         window.onload = () => {
             startGame();
-            setInterval(renderIncoming, 1000); // Обновляем таймеры и удаляем просроченные
+            setInterval(renderIncoming, 1000);
         };
     </script>
 </body>
