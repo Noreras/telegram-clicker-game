@@ -505,6 +505,10 @@
                 // ✅ Добавляем open.png СЛЕВА от типа документа
                 item.innerHTML = `
                     <img src="${openIcon}" class="doc-icon-open" alt="Открыть">
+                    <div class="doc-type">${doc.type}</div>
+                    <div class="doc-contractor">${doc.contractor}</div>
+                    <div class="doc-status">Входящий</div>
+                    <div class="doc-timer">Осталось: ${timeLeft} сек</div>
                 `;
                 list.appendChild(item);
             });
@@ -602,6 +606,7 @@
     </script>
 </body>
 </html>
+
 
 
 
