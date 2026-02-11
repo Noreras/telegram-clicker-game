@@ -1,0 +1,48 @@
+/* Анимации */
+
+.cell.swapping img {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cell.spawning img {
+    animation: spawn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.cell.removing img {
+    animation: remove 0.3s ease-in forwards;
+}
+
+.cell.swapping {
+    z-index: 10;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cell.falling {
+    z-index: 5;
+}
+
+/* Убрана дублирующая анимация для .cell.spawning - только на img */
+
+.cell.removing {
+    animation: remove 0.3s ease-in forwards;
+}
+
+@keyframes spawn {
+    0% {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes remove {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
