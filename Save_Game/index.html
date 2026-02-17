@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>К3вР</title>
+    <link rel="stylesheet" href="https://s.kontur.ru/common-v2/fonts/LabGrotesque/LabGrotesque.css" />
+    <link rel="stylesheet" href="Save_Game/css/base.css">
+    <link rel="stylesheet" href="Save_Game/css/ui.css">
+    <link rel="stylesheet" href="Save_Game/css/board.css">
+    <link rel="stylesheet" href="Save_Game/css/animations.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Контур 3 в ряд</h1>
+            <div class="score-panel">
+                <div class="score">
+                    <span>Очки: </span>
+                    <span id="score">0</span>
+                </div>
+                <div id="moves-wrap" class="moves">
+                    <span>Ходы: </span>
+                    <span id="moves">0</span>
+                </div>
+                <div id="timer-wrap" class="timer" style="display: none;">
+                    <span>Время: </span>
+                    <span id="timer">1:00</span>
+                </div>
+                <div id="combo-wrap" class="combo" style="display: none;">
+                    <span id="combo-badge">x2</span>
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <div id="game-board" class="game-board">
+                <!-- Игровое поле будет создано через JavaScript -->
+            </div>
+            
+            <div class="controls">
+                <div class="mode-switch">
+                    <button type="button" id="mode-moves-btn" class="btn btn-mode active">По ходам</button>
+                    <button type="button" id="mode-time-btn" class="btn btn-mode">На время</button>
+                </div>
+                <div class="controls-buttons">
+                    <button id="hint-btn" class="btn btn-secondary">Подсказка</button>
+                    <button id="new-game-btn" class="btn">Новая игра</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="Save_Game/js/config.js"></script>
+    <script src="Save_Game/js/board.js"></script>
+    <script src="Save_Game/js/animations.js"></script>
+    <script src="Save_Game/js/ui.js"></script>
+    <script src="Save_Game/js/game.js"></script>
+    <script src="Save_Game/js/main.js"></script>
+</body>
+</html>
