@@ -3,25 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игра 3 в ряд - Кристалики</title>
-    <!-- Подключение стилей из папки assets/css -->
-    <link rel="stylesheet" href="assets/css/base.css">
-    <link rel="stylesheet" href="assets/css/ui.css">
-    <link rel="stylesheet" href="assets/css/board.css">
-    <link rel="stylesheet" href="assets/css/animations.css">
+    <title>К3вР</title>
+    <link rel="stylesheet" href="https://s.kontur.ru/common-v2/fonts/LabGrotesque/LabGrotesque.css" />
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/ui.css">
+    <link rel="stylesheet" href="css/board.css">
+    <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Кристалики</h1>
+            <h1>Контур 3 в ряд</h1>
             <div class="score-panel">
                 <div class="score">
                     <span>Очки: </span>
                     <span id="score">0</span>
                 </div>
-                <div class="moves">
+                <div id="moves-wrap" class="moves">
                     <span>Ходы: </span>
                     <span id="moves">0</span>
+                </div>
+                <div id="timer-wrap" class="timer" style="display: none;">
+                    <span>Время: </span>
+                    <span id="timer">1:00</span>
+                </div>
+                <div id="combo-wrap" class="combo" style="display: none;">
+                    <span id="combo-badge">x2</span>
                 </div>
             </div>
         </header>
@@ -32,18 +39,23 @@
             </div>
             
             <div class="controls">
-                <button id="new-game-btn" class="btn">Новая игра</button>
+                <div class="mode-switch">
+                    <button type="button" id="mode-moves-btn" class="btn btn-mode active">По ходам</button>
+                    <button type="button" id="mode-time-btn" class="btn btn-mode">На время</button>
+                </div>
+                <div class="controls-buttons">
+                    <button id="hint-btn" class="btn btn-secondary">Подсказка</button>
+                    <button id="new-game-btn" class="btn">Новая игра</button>
+                </div>
             </div>
         </main>
     </div>
     
-    <!-- Подключение скриптов из папки assets/js -->
-    <script src="assets/js/config.js"></script>
-    <script src="assets/js/board.js"></script>
-    <script src="assets/js/animations.js"></script>
-    <script src="assets/js/ui.js"></script>
-    <script src="assets/js/game.js"></script>
-    <script src="assets/js/main.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/animations.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
-
